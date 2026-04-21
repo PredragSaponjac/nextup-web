@@ -4,6 +4,7 @@
    ============================================================= */
 
 .nx-welcome {
+  position: relative;
   height: 100%;
   background: #000000;
   color: #fafaf9;
@@ -15,6 +16,45 @@
   font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* === Hero photo grid (6 service category shots behind the hero copy) === */
+.nx-welcome__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+.nx-welcome__tile {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* Dark gradient overlay on top of the photos so the text + buttons stay legible */
+.nx-welcome__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,0,0.45) 0%,
+      rgba(0,0,0,0.70) 40%,
+      rgba(0,0,0,0.88) 70%,
+      rgba(0,0,0,0.96) 100%);
+}
+
+/* Keep all interactive content above the photo grid */
+.nx-welcome__top,
+.nx-welcome__center,
+.nx-welcome__footer {
+  position: relative;
+  z-index: 2;
 }
 
 .nx-welcome__top {

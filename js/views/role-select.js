@@ -8,6 +8,16 @@ window.Views.RoleSelect = {
   render() {
     window.mount(`
       <div class="nx-welcome">
+        <div class="nx-welcome__grid" aria-hidden="true">
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-beauty.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-cleaning.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-dogs.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-fitness.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-repair.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-spa.png');"></div>
+        </div>
+        <div class="nx-welcome__overlay" aria-hidden="true"></div>
+
         <div class="nx-welcome__top">
           <div class="nx-welcome__logo">NextUp</div>
         </div>
@@ -15,7 +25,7 @@ window.Views.RoleSelect = {
         <div class="nx-welcome__center">
           <p class="nx-welcome__label">On-Demand Services</p>
           <h1 class="nx-welcome__headline">Whatever you need.<br>Whoever's nearby.</h1>
-          <p class="nx-welcome__sub">113 services · 14 categories · One tap.</p>
+          <p class="nx-welcome__sub">334 services &middot; 14 categories &middot; One tap.</p>
 
           <div class="nx-role-cards">
             <button class="nx-role-card" id="role-customer" type="button">
