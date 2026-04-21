@@ -166,6 +166,8 @@ function pTabIcon(kind) {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>`;
     case "profile":
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>`;
+    case "messages":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 011 1v11a1 1 0 01-1 1h-9l-5 4v-4H4a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>`;
   }
   return "";
 }
@@ -173,8 +175,8 @@ function pTabIcon(kind) {
 window.providerTabBar = function (active) {
   const tabs = [
     { key: "dashboard", label: "Dashboard", hash: "dashboard" },
+    { key: "messages",  label: "Messages",  hash: "p-messages" },
     { key: "history",   label: "History",   hash: "p-history" },
-    { key: "billing",   label: "Billing",   hash: "billing" },
     { key: "profile",   label: "Profile",   hash: "p-profile" },
   ];
   return `

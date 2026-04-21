@@ -840,6 +840,97 @@
   line-height: 1.45;
 }
 
+/* ==== Message thread (1:1 booking chat) ==== */
+.nx-screen--thread {
+  /* Lock the whole screen; composer stays pinned, body scrolls */
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top, 0) 0 0;
+  height: 100%;
+}
+.nx-screen--thread .nx-appbar--with-back {
+  padding: 10px 14px;
+  margin-bottom: 0;
+}
+.nx-thread__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 16px;
+}
+.nx-thread__banner {
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border-soft);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.nx-thread__stream { display: flex; flex-direction: column; gap: 10px; }
+.nx-msg { display: flex; flex-direction: column; max-width: 80%; }
+.nx-msg--mine   { align-self: flex-end; align-items: flex-end; }
+.nx-msg--theirs { align-self: flex-start; align-items: flex-start; }
+.nx-msg__bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-family: var(--nx-font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+.nx-msg--mine .nx-msg__bubble {
+  background: #fafaf9;
+  color: #111;
+  border-bottom-right-radius: 4px;
+}
+.nx-msg--theirs .nx-msg__bubble {
+  background: var(--nx-surface);
+  color: var(--nx-text);
+  border: 1px solid var(--nx-border-soft);
+  border-bottom-left-radius: 4px;
+}
+.nx-msg__meta {
+  font-size: 11px;
+  color: var(--nx-text-muted);
+  padding: 4px 6px 0;
+}
+.nx-thread__composer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px calc(env(safe-area-inset-bottom, 0) + 10px);
+  background: #0a0a0a;
+  border-top: 1px solid var(--nx-border-soft);
+}
+.nx-thread__input {
+  flex: 1;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border-soft);
+  border-radius: 999px;
+  padding: 11px 18px;
+  color: var(--nx-text);
+  font-family: var(--nx-font-sans);
+  font-size: 15px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.nx-thread__input::placeholder { color: var(--nx-text-muted); }
+.nx-thread__send {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: #fafaf9;
+  color: #111;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.nx-thread__send svg { width: 22px; height: 22px; display: block; }
+.nx-thread__send:disabled { opacity: 0.5; cursor: default; }
+
 /* ==== One-tap rating: thumbs up / down ==== */
 .nx-thumbs {
   display: flex;

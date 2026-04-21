@@ -77,10 +77,15 @@ window.Views.CustomerBooking = {
             </div>
           </div>
 
-          <button class="nx-cta" id="review-btn" style="margin-top:8px;">Rate this provider</button>
+          <button class="nx-cta" id="message-btn" style="margin-top:8px;">Message ${window.esc(accepted.business_name || accepted.provider_name || "provider")}</button>
+          <button class="nx-cta" id="review-btn" style="margin-top:10px; background:transparent; border:1px solid var(--nx-border); color:var(--nx-text);">Rate this provider</button>
           <button class="nx-cta" id="home-btn" style="margin-top:10px; background:transparent;">Back to Home</button>
         </div>
       `;
+
+      document.getElementById("message-btn").addEventListener("click", () => {
+        window.navigate(`thread/${requestId}`);
+      });
 
       document.getElementById("review-btn").addEventListener("click", () => {
         sessionStorage.setItem("nextup_review_provider", JSON.stringify({

@@ -1,33 +1,29 @@
 /* =============================================================
-   NextUp — Messages (thread list)
-   Route: #messages
-   Shows every booking thread the user is part of, newest first.
-   Tap → #thread/:requestId for the full conversation.
+   NextUp — Provider Messages (thread list)
+   Route: #p-messages
+   Same /api/messages/threads endpoint as customer — the backend
+   decides "other party" correctly based on who's logged in.
    ============================================================= */
 
-let NX_MSG_LIST_POLL = null;
+let NX_PROV_MSG_POLL = null;
 
-window.Views.CustomerMessages = {
+window.Views.ProviderMessages = {
   async render() {
     await this._renderOnce();
-    clearInterval(NX_MSG_LIST_POLL);
-    NX_MSG_LIST_POLL = setInterval(() => this._renderOnce(true), 15000);
-    window.addEventListener("hashchange", () => clearInterval(NX_MSG_LIST_POLL), { once: true });
+    clearInterval(NX_PROV_MSG_POLL);
+    NX_PROV_MSG_POLL = setInterval(() => this._renderOnce(true), 15000);
+    window.addEventListener("hashchange", () => clearInterval(NX_PROV_MSG_POLL), { once: true });
   },
 
   async _renderOnce(silent) {
     let threads = [];
-    try {
-      threads = await window.apiFetch("/api/messages/threads");
-    } catch (_) {
-      if (!silent) threads = [];
-    }
+    try { threads = await window.apiFetch("/api/messages/threads"); } catch (_) {}
 
     const body = (threads && threads.length)
       ? threads.map(t => this._renderRow(t)).join("")
       : `<div class="nx-empty" style="padding-top:32px;">
            <div class="nx-empty__title">No messages yet</div>
-           <div>When a provider responds to your request, you can chat here.</div>
+           <div>When a customer replies after you've sent an offer, the thread shows up here.</div>
          </div>`;
 
     window.mount(`
@@ -42,18 +38,18 @@ window.Views.CustomerMessages = {
           </div>
           ${body}
         </div>
-        ${window.customerTabBar("messages")}
+        ${window.providerTabBar("messages")}
       </div>
     `);
 
     document.querySelectorAll("[data-thread]").forEach(el => {
       el.addEventListener("click", () => window.navigate(`thread/${el.dataset.thread}`));
     });
-    window.bindCustomerTabBar();
+    window.bindProviderTabBar();
   },
 
   _renderRow(t) {
-    const name = t.other_business_name || t.other_name || "Provider";
+    const name = t.other_name || "Customer";
     const preview = (t.last_body || "").replace(/\s+/g, " ").slice(0, 90);
     const ago = t.last_at ? window.timeAgo(t.last_at) : "";
     const unread = t.unread || 0;

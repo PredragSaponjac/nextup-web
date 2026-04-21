@@ -68,7 +68,15 @@ window.Views.ProviderProfile = {
 
             <button class="nx-cta" id="edit-btn" type="button" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); margin-top:18px;">Edit profile</button>
 
-            <div class="nx-form__row" id="row-change-password" style="cursor:pointer; margin-top:14px;">
+            <div class="nx-form__row" id="row-billing" style="cursor:pointer; margin-top:14px;">
+              <div class="nx-form__label">Billing</div>
+              <div class="nx-form__value">
+                <span>Subscription &amp; plans</span>
+                <span class="nx-form__chev">\u203a</span>
+              </div>
+            </div>
+
+            <div class="nx-form__row" id="row-change-password" style="cursor:pointer;">
               <div class="nx-form__label">Password</div>
               <div class="nx-form__value">
                 <span>Change</span>
@@ -153,6 +161,11 @@ window.Views.ProviderProfile = {
         chev.style.color = turningOn ? "#22c55e" : "";
       });
     }
+
+    // ---- Billing ----
+    document.getElementById("row-billing").addEventListener("click", () => {
+      window.navigate("billing");
+    });
 
     // ---- Change password ----
     document.getElementById("row-change-password").addEventListener("click", () => {

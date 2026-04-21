@@ -26,12 +26,14 @@ const ROUTES = [
   { match: "review",        view: "CustomerReview",    auth: "required", role: "customer" },
   { match: "my-requests",   view: "CustomerMyRequests", auth: "required", role: "customer" },
   { match: "messages",      view: "CustomerMessages",  auth: "required", role: "customer" },
+  { match: "thread",        view: "MessageThread",     auth: "required", role: null },
   { match: "profile",       view: "CustomerProfile",   auth: "required", role: "customer" },
   { match: "become-provider", view: "BecomeProvider", auth: "required", role: "customer" },
   // Provider routes
   { match: "dashboard",     view: "ProviderDashboard", auth: "required", role: "provider" },
   { match: "respond",       view: "ProviderRespond",   auth: "required", role: "provider" },
   { match: "p-history",     view: "ProviderHistory",   auth: "required", role: "provider" },
+  { match: "p-messages",    view: "ProviderMessages",  auth: "required", role: "provider" },
   { match: "p-profile",     view: "ProviderProfile",   auth: "required", role: "provider" },
   { match: "billing",       view: "ProviderBilling",   auth: "required", role: "provider" },
 ];
