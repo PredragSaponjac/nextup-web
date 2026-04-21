@@ -311,7 +311,11 @@ window.Views.Auth = {
           try {
             const pos = await new Promise((resolve, reject) => {
               if (!navigator.geolocation) return reject(new Error("no geo"));
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: false,
+                timeout: 30000,
+                maximumAge: 5 * 60 * 1000,
+              });
             });
             lat = pos.coords.latitude; lng = pos.coords.longitude;
           } catch (_) { /* location can be set later from Profile */ }

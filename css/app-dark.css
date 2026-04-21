@@ -755,7 +755,14 @@
   stroke-width: 1.6;
   flex-shrink: 0;
 }
-.nx-searchtile span { flex: 1; color: var(--nx-text-muted); }
+.nx-searchtile span {
+  flex: 1;
+  color: var(--nx-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
 .nx-searchtile span strong { color: var(--nx-text); font-weight: 500; }
 .nx-searchtile .chev { color: var(--nx-text-muted); font-size: 20px; line-height: 1; }
 

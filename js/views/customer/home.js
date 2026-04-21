@@ -119,7 +119,7 @@ window.Views.CustomerHome = {
               <circle cx="9" cy="9" r="6"></circle>
               <path d="M14 14l4 4" stroke-linecap="round"></path>
             </svg>
-            <span>Already know who you want? <strong>Search by name</strong></span>
+            <span><strong>Search by name</strong> &middot; already know who you want</span>
             <span class="chev">›</span>
           </button>
 
