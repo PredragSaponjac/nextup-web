@@ -55,6 +55,14 @@ window.Views.CustomerProfile = {
               </div>
             ` : ``}
 
+            <div class="nx-form__row" id="row-change-password" style="cursor:pointer;">
+              <div class="nx-form__label">Password</div>
+              <div class="nx-form__value">
+                <span>Change</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" style="cursor:default;">
               <div class="nx-form__label">App version</div>
               <div class="nx-form__value">
@@ -100,6 +108,10 @@ window.Views.CustomerProfile = {
         chev.style.color = turningOn ? "#22c55e" : "";
       });
     }
+
+    document.getElementById("row-change-password").addEventListener("click", () => {
+      window.navigate("change-password");
+    });
 
     document.getElementById("sign-out-btn").addEventListener("click", () => {
       if (!confirm("Sign out?")) return;
