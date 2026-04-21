@@ -1,0 +1,49 @@
+/* =============================================================
+   NextUp App — Design Tokens
+   Monochrome editorial palette, Zodiak + Satoshi typography.
+   ============================================================= */
+
+:root {
+  /* Colors */
+  --bg:         #fafaf9;
+  --surface:    #ffffff;
+  --dark:       #111111;
+  --border:     #e5e5e0;
+  --border-hover: #cbcbc0;
+  --muted:      #666660;
+  --faint:      #999994;
+  --danger:     #8b2020;
+  --success:    #1a6b3c;
+  --warning:    #c67a00;
+
+  /* Fonts */
+  --font-display: 'Zodiak', Georgia, 'Times New Roman', serif;
+  --font-body:    'Satoshi', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* Shape */
+  --radius:     2px;
+  --radius-lg:  4px;
+
+  /* Spacing */
+  --spacing-xs:  6px;
+  --spacing-sm:  12px;
+  --spacing-md:  20px;
+  --spacing-lg:  32px;
+  --spacing-xl:  48px;
+  --spacing-2xl: 64px;
+
+  /* Layout */
+  --tab-bar-height:    60px;
+  --header-height:     52px;
+  --safe-bottom:       env(safe-area-inset-bottom, 0);
+  --safe-top:          env(safe-area-inset-top, 0);
+
+  /* Shadow */
+  --shadow-sm:  0 1px 2px rgba(17, 17, 17, 0.06);
+  --shadow-md:  0 4px 12px rgba(17, 17, 17, 0.08);
+  --shadow-lg:  0 8px 32px rgba(17, 17, 17, 0.12);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.33, 1, 0.68, 1);
+  --duration:   180ms;
+}

@@ -1,0 +1,88 @@
+/* =============================================================
+   NextUp App — Base Reset + Typography
+   ============================================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  background: #000000;              /* pure black so overscroll bounce never shows white */
+}
+
+/* Pin html/body so iOS WKWebView rubber-band can't bounce past content and
+   reveal the native WebView background. Real scrolling happens inside
+   .nx-screen__body (which has its own overflow-y:auto).                     */
+html {
+  position: fixed;
+  overflow: hidden;
+}
+body {
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: #000000;
+  color: #fafaf9;
+  font-size: 15px;
+  line-height: 1.5;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Extend the safe-area / status-bar background to black so the top inset isn't white */
+:root { color-scheme: dark; }
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 500;
+  font-family: 'Zodiak', Georgia, serif;
+}
+
+p {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+#app {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000000;
+}
