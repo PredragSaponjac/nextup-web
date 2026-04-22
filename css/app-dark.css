@@ -975,6 +975,30 @@
   color: #22c55e;
 }
 
+/* ==== Billing plan cards ==== */
+.nx-plan-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border-soft);
+  border-radius: 14px;
+  color: var(--nx-text);
+  font-family: var(--nx-font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.nx-plan-card:hover {
+  background: #161616;
+  border-color: var(--nx-border);
+}
+.nx-plan-card:active { transform: scale(0.99); }
+.nx-plan-card:disabled { cursor: default; opacity: 0.6; }
+
 /* ==== Chip cluster (used on provider detail for "services offered") ==== */
 .nx-chipstack {
   display: flex;
