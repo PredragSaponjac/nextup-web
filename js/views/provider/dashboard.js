@@ -193,6 +193,7 @@ window.providerTabBar = function (active) {
     { key: "dashboard", label: "Dashboard", hash: "dashboard" },
     { key: "messages",  label: "Messages",  hash: "p-messages" },
     { key: "history",   label: "History",   hash: "p-history" },
+    { key: "billing",   label: "Billing",   hash: "billing"   },
     { key: "profile",   label: "Profile",   hash: "p-profile" },
   ];
   return `

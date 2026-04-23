@@ -105,6 +105,76 @@ window.mount = function (html) {
   if (root) root.innerHTML = html;
 };
 
+// --------------- Confirm / alert dialogs (WebView-safe) ---------------
+// window.confirm() and window.alert() are silently suppressed inside
+// Capacitor iOS WKWebViews — the call returns immediately without showing
+// the dialog or waiting for the user. That silently breaks sign-out,
+// booking, start-trial, etc. on iOS.
+//
+// nxConfirm renders an in-DOM modal and returns a Promise<boolean>.
+// nxAlert does the same with a single OK button. Both work identically on
+// web, iOS, and Android, with no plugin dependency.
+window.nxConfirm = function (message, opts) {
+  opts = opts || {};
+  const okLabel = opts.okLabel || "OK";
+  const cancelLabel = opts.cancelLabel || "Cancel";
+  const danger = !!opts.danger;
+  return new Promise((resolve) => {
+    const existing = document.getElementById("nx-modal");
+    if (existing) existing.remove();
+    const overlay = document.createElement("div");
+    overlay.id = "nx-modal";
+    overlay.style.cssText =
+      "position:fixed; inset:0; z-index:10000; display:flex; align-items:center; " +
+      "justify-content:center; padding:24px; background:rgba(0,0,0,0.66); " +
+      "backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);";
+    const safeMsg = window.esc(message).replace(/\n/g, "<br>");
+    overlay.innerHTML =
+      '<div role="dialog" aria-modal="true" style="max-width:360px; width:100%; ' +
+      'background:#141414; border:1px solid #2a2a2a; border-radius:16px; ' +
+      'padding:22px; color:#fafaf9; font-family:var(--nx-font-sans,system-ui);">' +
+      '<div style="font-size:15px; line-height:1.5; padding:4px 0 18px;">' + safeMsg + '</div>' +
+      '<div style="display:flex; gap:10px;">' +
+      '<button id="nx-modal-cancel" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:1px solid #2a2a2a; background:transparent; color:#fafaf9; ' +
+      'font-size:15px;">' + window.esc(cancelLabel) + '</button>' +
+      '<button id="nx-modal-ok" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:0; background:' + (danger ? '#ef4444' : '#22c55e') + '; color:#000; ' +
+      'font-weight:600; font-size:15px;">' + window.esc(okLabel) + '</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+    const cleanup = (result) => { overlay.remove(); resolve(result); };
+    overlay.querySelector("#nx-modal-ok").addEventListener("click", () => cleanup(true));
+    overlay.querySelector("#nx-modal-cancel").addEventListener("click", () => cleanup(false));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(false); });
+  });
+};
+
+window.nxAlert = function (message, opts) {
+  opts = opts || {};
+  return window.nxConfirm(message, {
+    okLabel: opts.okLabel || "OK",
+    cancelLabel: "",
+  }).then(() => undefined);
+};
+
+// --------------- Open an external URL (Stripe Checkout, etc.) ----------
+// Inside a Capacitor WebView, window.location.href = url navigates the
+// whole WebView to Stripe and leaves the user stranded with no way back.
+// Prefer @capacitor/browser if installed; fall back to a top-level
+// navigation on plain web.
+window.nxOpenExternal = async function (url) {
+  try {
+    const Browser =
+      window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+    if (Browser && Browser.open) {
+      await Browser.open({ url, presentationStyle: "popover" });
+      return;
+    }
+  } catch (_) { /* fall through to plain navigation */ }
+  window.location.href = url;
+};
+
 // --------------- Show a toast message ---------------
 window.toast = function (message, type) {
   const existing = document.getElementById("toast");

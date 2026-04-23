@@ -113,8 +113,8 @@ window.Views.CustomerProfile = {
       window.navigate("change-password");
     });
 
-    document.getElementById("sign-out-btn").addEventListener("click", () => {
-      if (!confirm("Sign out?")) return;
+    document.getElementById("sign-out-btn").addEventListener("click", async () => {
+      if (!(await window.nxConfirm("Sign out?", { okLabel: "Sign out", danger: true }))) return;
       window.clearSession();
       window.navigate("role-select");
     });

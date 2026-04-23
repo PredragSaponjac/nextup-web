@@ -201,13 +201,13 @@ window.Views.CustomerResponses = {
   },
 
   async _book(responseId) {
-    if (!confirm("Book this provider?")) return;
+    if (!(await window.nxConfirm("Book this provider?", { okLabel: "Book now" }))) return;
     try {
       await window.apiFetch(`/api/requests/${this.requestId}/accept/${responseId}`, { method: "POST" });
       clearInterval(NX_POLL);
       window.navigate(`booking/${this.requestId}`);
     } catch (e) {
-      alert("Could not book: " + e.message);
+      window.nxAlert("Could not book: " + e.message);
     }
   },
 

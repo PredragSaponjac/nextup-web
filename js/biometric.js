@@ -41,10 +41,11 @@ window.maybeOfferBiometricAfterLogin = async function () {
   if (window._store.getItem("nextup_biometric_offered") === "1") return; // already asked & declined
   window._store.setItem("nextup_biometric_offered", "1");
 
-  const enable = confirm(
+  const enable = await window.nxConfirm(
     "Use Face ID for NextUp?\n\n" +
     "Sign in faster next time with Face ID instead of typing your password. " +
-    "You can change this later in Profile."
+    "You can change this later in Profile.",
+    { okLabel: "Enable", cancelLabel: "Not now" }
   );
   if (enable) {
     window.setBiometricEnabled(true);

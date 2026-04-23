@@ -246,7 +246,11 @@ window.Views.ProviderProfile = {
       }
       // If category changed and services were previously set, warn user
       if (profile && profile.category && profile.category !== newCategory && body.services && body.services.length) {
-        if (!confirm(`You're changing category to "${newCategory}". Your current services list (${body.services.join(", ")}) may not match the new category. Continue?`)) {
+        const proceed = await window.nxConfirm(
+          `You're changing category to "${newCategory}". Your current services list (${body.services.join(", ")}) may not match the new category. Continue?`,
+          { okLabel: "Continue" }
+        );
+        if (!proceed) {
           btn.disabled = false; btn.textContent = "Save changes";
           return;
         }
@@ -264,8 +268,8 @@ window.Views.ProviderProfile = {
       }
     });
 
-    document.getElementById("sign-out-btn").addEventListener("click", () => {
-      if (!confirm("Sign out of NextUp?")) return;
+    document.getElementById("sign-out-btn").addEventListener("click", async () => {
+      if (!(await window.nxConfirm("Sign out of NextUp?", { okLabel: "Sign out", danger: true }))) return;
       window.clearSession();
       window.navigate("role-select");
     });

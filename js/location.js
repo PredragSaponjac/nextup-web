@@ -60,7 +60,7 @@ window.nxReverseGeocode = async function (lat, lng) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
     const res = await fetch(url, {
-      headers: { "User-Agent": "NextUp iOS (contact: pedjap1980@gmail.com)" },
+      headers: { "User-Agent": "NextUp iOS (contact: support@nextupservices.com)" },
     });
     if (!res.ok) return null;
     const data = await res.json();

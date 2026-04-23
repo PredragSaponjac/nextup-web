@@ -14,9 +14,11 @@
 
 window.Views.ProviderBilling = {
   async render(params) {
-    // Handle ?success=true query after Stripe Checkout redirect
-    const hash = window.location.hash || "";
-    const isReturnFromCheckout = hash.includes("success=true");
+    // Handle ?success=true after Stripe Checkout redirect. Stripe appends a
+    // query string, but with hash routing that string can land either BEFORE
+    // the hash (true query) OR AFTER (inside the hash). Check both.
+    const href = window.location.href || "";
+    const isReturnFromCheckout = href.includes("success=true");
 
     let status = {};
     let cfg = {};
@@ -28,7 +30,7 @@ window.Views.ProviderBilling = {
     } catch (_) {}
 
     const stripeOk = cfg && cfg.configured;
-    const trialDays = (cfg && cfg.trial_days) || 30;
+    const trialDays = (cfg && cfg.trial_days) || 90;
     this._render(status, stripeOk, trialDays, isReturnFromCheckout);
   },
 
@@ -109,9 +111,13 @@ window.Views.ProviderBilling = {
   },
 
   _startTrialUI(trialDays) {
+    // Display trial length in months when ≥ 30 days for a cleaner headline.
+    const headline = trialDays >= 60
+      ? `${Math.round(trialDays / 30)}-month free trial`
+      : `${trialDays}-day free trial`;
     return `
       <div class="nx-respcard" style="cursor:default; margin-bottom:20px; background:linear-gradient(180deg, rgba(34,197,94,0.08) 0%, transparent 100%); border-color:var(--nx-border);">
-        <h3 class="nx-respcard__name" style="font-size:24px;">${trialDays}-day free trial</h3>
+        <h3 class="nx-respcard__name" style="font-size:24px;">${headline}</h3>
         <div style="font-size:14px; color:var(--nx-text-muted); padding:6px 0 0; line-height:1.5;">
           No credit card required. Full access to NextUp \u2014 receive broadcasts, send offers, complete bookings. Your trial starts the moment you tap below.
         </div>
@@ -157,7 +163,7 @@ window.Views.ProviderBilling = {
 
       <button class="nx-cta" id="add-payment-btn">Add payment method now</button>
       <p style="margin:6px 0 16px; text-align:center; font-size:12px; color:var(--nx-text-muted);">
-        Optional before trial ends. Prevents missed charge on day ${((status && status.trial_days_left) != null ? (status.trial_days_left + 1) : "31")}.
+        Optional before trial ends. Prevents missed charge after day ${((status && status.trial_days_left) != null ? (status.trial_days_left + 1) : "trial end")}.
       </p>
 
       <button class="nx-cta" id="portal-btn" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text);">Manage subscription</button>
@@ -237,7 +243,10 @@ window.Views.ProviderBilling = {
       el.addEventListener("click", async () => {
         const plan = el.dataset.plan;
         if (!plan) return;
-        if (!confirm(`Start your 30-day free trial on the ${plan} plan?\n\nNo charge today. We won't bill you until day 31, and only if you add a payment method.`)) return;
+        if (!(await window.nxConfirm(
+          `Start your 3-month free trial on the ${plan} plan?\n\nNo charge today. We won't bill you until the trial ends, and only if you add a payment method.`,
+          { okLabel: "Start trial" }
+        ))) return;
         el.disabled = true;
         el.style.opacity = "0.6";
         try {
@@ -248,7 +257,7 @@ window.Views.ProviderBilling = {
           window.toast && window.toast("Trial started \u2014 welcome!", "success");
           window.Views.ProviderBilling.render();
         } catch (e) {
-          alert("Couldn't start trial: " + (e.message || "try again"));
+          window.nxAlert("Couldn't start trial: " + (e.message || "try again"));
           el.disabled = false;
           el.style.opacity = "";
         }
@@ -263,10 +272,10 @@ window.Views.ProviderBilling = {
         addPay.textContent = "Opening Stripe\u2026";
         try {
           const res = await window.apiFetch("/api/billing/add-payment-method", { method: "POST" });
-          if (res && res.url) window.location.href = res.url;
+          if (res && res.url) await window.nxOpenExternal(res.url);
           else throw new Error("No checkout URL");
         } catch (e) {
-          alert(e.message || "Couldn't open payment screen");
+          window.nxAlert(e.message || "Couldn't open payment screen");
           addPay.disabled = false;
           addPay.textContent = "Add payment method";
         }
@@ -281,10 +290,10 @@ window.Views.ProviderBilling = {
         portal.textContent = "Opening portal\u2026";
         try {
           const res = await window.apiFetch("/api/billing/portal", { method: "POST" });
-          if (res && res.url) window.location.href = res.url;
+          if (res && res.url) await window.nxOpenExternal(res.url);
           else throw new Error("No portal URL");
         } catch (e) {
-          alert(e.message || "Couldn't open portal");
+          window.nxAlert(e.message || "Couldn't open portal");
           portal.disabled = false;
           portal.textContent = "Manage subscription";
         }
