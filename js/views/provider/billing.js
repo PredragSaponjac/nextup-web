@@ -3,8 +3,8 @@
    Route: #billing
 
    States:
-     no subscription yet  \u2192 "Start 30-Day Free Trial" picker (monthly/yearly)
-     trialing             \u2192 "Free trial \u2014 28 days left" + Add payment method
+     no subscription yet  \u2192 "Start 3-Month Free Trial" picker (monthly/yearly)
+     trialing             \u2192 "Free trial \u2014 88 days left" + Add payment method
                              (soft) + Manage subscription
      active               \u2192 "Active \u2014 renews May 22" + Manage subscription
      past_due / unpaid    \u2192 "Payment failed \u2014 Update payment method" CTA

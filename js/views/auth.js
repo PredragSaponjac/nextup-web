@@ -88,7 +88,7 @@ window.Views.Auth = {
     const isProvider = role === "provider";
     const title = isProvider ? "Become a Provider" : "Create Account";
     const subHeadline = isProvider ? "Get matched with customers nearby." : "Find nearby providers.";
-    const subSubline = isProvider ? "First month free, then $19/month. Cancel anytime." : "Broadcast your request in seconds.";
+    const subSubline = isProvider ? "3 months free, then $19/month. Cancel anytime." : "Broadcast your request in seconds.";
 
     // Build category options for provider — pulled from the taxonomy
     const catKeys = Object.keys(window.SERVICES_TAXONOMY || {});
@@ -149,9 +149,8 @@ window.Views.Auth = {
                   <span class="nx-form__chev">›</span>
                 </div>
               </div>
-              <div class="nx-form__row">
-                <div class="nx-form__label">City</div>
-                <input class="nx-auth-input" type="text" id="reg-city" required placeholder="Houston">
+              <div class="nx-form__row" style="flex-direction:column; align-items:stretch;">
+                ${window.nxLocationPicker ? window.nxLocationPicker.render("reg-loc", {}) : `<div>Loading location picker…</div>`}
               </div>
             ` : ``}
             <div class="nx-form__row">
@@ -159,7 +158,7 @@ window.Views.Auth = {
               <input class="nx-auth-input" type="password" id="reg-password" required minlength="6" autocomplete="new-password" placeholder="At least 6 characters">
             </div>
             <div id="reg-error" style="display:none; color:#ef4444; font-size:13px; margin-top:14px;"></div>
-            <button type="submit" class="nx-cta" id="submit-btn">${isProvider ? "Start Free Month" : "Create Account"}</button>
+            <button type="submit" class="nx-cta" id="submit-btn">${isProvider ? "Start 3 Months Free" : "Create Account"}</button>
           </form>
 
           <div style="text-align:center; padding:18px 0; font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">
@@ -171,6 +170,11 @@ window.Views.Auth = {
 
     document.getElementById("back-btn").addEventListener("click", () => window.navigate("role-select"));
     document.getElementById("go-login").addEventListener("click", () => window.navigate("login"));
+
+    // Location picker (provider only) — wire radio/panel + GPS button listeners
+    if (isProvider && window.nxLocationPicker) {
+      window.nxLocationPicker.bind("reg-loc");
+    }
 
     // Category + subcategory + optional fine-tune flow (provider only)
     let selectedCategory = null;
@@ -307,18 +311,23 @@ window.Views.Auth = {
         if (isProvider) {
           btn.textContent = "Setting up profile…";
           // Try to get lat/lng from device to save on the profile so provider matching works
-          let lat = null, lng = null;
-          try {
-            const pos = await new Promise((resolve, reject) => {
-              if (!navigator.geolocation) return reject(new Error("no geo"));
-              navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: false,
-                timeout: 30000,
-                maximumAge: 5 * 60 * 1000,
+          // Read from the 3-option location picker (GPS / business / home).
+          // If GPS selected but user hasn't tapped the button, try a silent grab.
+          let loc = await window.nxLocationPicker.getValue("reg-loc");
+          if (loc.source === "gps" && loc.lat == null) {
+            try {
+              const pos = await new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error("no geo"));
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  enableHighAccuracy: false,
+                  timeout: 30000,
+                  maximumAge: 5 * 60 * 1000,
+                });
               });
-            });
-            lat = pos.coords.latitude; lng = pos.coords.longitude;
-          } catch (_) { /* location can be set later from Profile */ }
+              loc.lat = pos.coords.latitude;
+              loc.lng = pos.coords.longitude;
+            } catch (_) { /* can set later from Profile */ }
+          }
 
           await window.apiFetch("/api/providers/profile", {
             method: "POST",
@@ -326,9 +335,13 @@ window.Views.Auth = {
               business_name: document.getElementById("reg-business").value.trim(),
               category: selectedCategory,
               services: selectedServiceNames,        // explicit service-name list
-              city: document.getElementById("reg-city").value.trim(),
+              address: loc.address,
+              city: loc.city,
+              state: loc.state,
+              zip: loc.zip,
+              lat: loc.lat,
+              lng: loc.lng,
               phone: document.getElementById("reg-phone").value.trim(),
-              lat, lng,
             },
           });
         }
@@ -342,7 +355,7 @@ window.Views.Auth = {
       } catch (ex) {
         errEl.textContent = ex.message || "Could not create account";
         errEl.style.display = "block";
-        btn.disabled = false; btn.textContent = isProvider ? "Start Free Month" : "Create Account";
+        btn.disabled = false; btn.textContent = isProvider ? "Start 3 Months Free" : "Create Account";
       }
     });
   },

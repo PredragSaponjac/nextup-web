@@ -36,7 +36,7 @@ window.Views.RoleSelect = {
 
             <button class="nx-role-card" id="role-provider" type="button">
               <div class="nx-role-card__title">I'm a provider</div>
-              <div class="nx-role-card__sub">Get matched with customers nearby. First month free.</div>
+              <div class="nx-role-card__sub">Get matched with customers nearby. 3 months free.</div>
               <div class="nx-role-card__arrow">›</div>
             </button>
           </div>

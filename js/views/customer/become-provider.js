@@ -22,7 +22,7 @@ window.Views.BecomeProvider = {
 
           <div style="text-align:center; padding:12px 0 24px;">
             <div style="font-family:var(--nx-font-serif); font-style:italic; font-size:26px; color:var(--nx-text); margin-bottom:6px;">Offer your service.</div>
-            <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">Same login — flip to provider mode anytime. First month free.</div>
+            <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">Same login — flip to provider mode anytime. 3 months free.</div>
           </div>
 
           <form id="bp-form" class="nx-form">
@@ -60,7 +60,7 @@ window.Views.BecomeProvider = {
               <input class="nx-auth-input" type="text" id="bp-city" required placeholder="Houston">
             </div>
             <div id="bp-err" style="display:none; color:#ef4444; font-size:13px; margin-top:14px;"></div>
-            <button type="submit" class="nx-cta" id="bp-submit">Start Free Month</button>
+            <button type="submit" class="nx-cta" id="bp-submit">Start 3 Months Free</button>
           </form>
         </div>
       </div>

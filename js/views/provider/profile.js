@@ -50,8 +50,20 @@ window.Views.ProviderProfile = {
               <div class="nx-form__value"><span>${window.esc(catLabel)}</span></div>
             </div>
             <div class="nx-form__row" style="cursor:default;">
+              <div class="nx-form__label">Services</div>
+              <div class="nx-form__value"><span style="color:var(--nx-text-muted); font-size:13px;">${window.esc((profile && Array.isArray(profile.services) && profile.services.length) ? profile.services.join(", ") : "All in category")}</span></div>
+            </div>
+            <div class="nx-form__row" style="cursor:default;">
               <div class="nx-form__label">City</div>
               <div class="nx-form__value"><span>${window.esc((profile && profile.city) || "Not set")}</span></div>
+            </div>
+            <div class="nx-form__row" style="cursor:default;">
+              <div class="nx-form__label">State</div>
+              <div class="nx-form__value"><span style="color:${profile && profile.state ? "var(--nx-text)" : "#ef4444"};">${window.esc((profile && profile.state) || "Not set \u2014 Edit to fix")}</span></div>
+            </div>
+            <div class="nx-form__row" style="cursor:default;">
+              <div class="nx-form__label">ZIP</div>
+              <div class="nx-form__value"><span>${window.esc((profile && profile.zip) || "\u2014")}</span></div>
             </div>
             <div class="nx-form__row" style="cursor:default;">
               <div class="nx-form__label">Phone</div>
@@ -107,20 +119,28 @@ window.Views.ProviderProfile = {
                 <input class="nx-auth-input" type="text" id="e-business" required value="${window.esc((profile && profile.business_name) || "")}">
               </div>
               <div class="nx-form__row">
-                <div class="nx-form__label">City</div>
-                <input class="nx-auth-input" type="text" id="e-city" value="${window.esc((profile && profile.city) || "")}" placeholder="Houston">
+                <div class="nx-form__label">Category</div>
+                <select class="nx-auth-input" id="e-category" required>
+                  <option value="">Select category\u2026</option>
+                  ${Object.keys(window.SERVICES_TAXONOMY || {}).map(k => {
+                    const cat = window.SERVICES_TAXONOMY[k];
+                    const sel = profile && profile.category === k ? "selected" : "";
+                    return `<option value="${k}" ${sel}>${window.esc(cat.label || k)}</option>`;
+                  }).join("")}
+                </select>
+              </div>
+              <div class="nx-form__row">
+                <div class="nx-form__label">Services you offer</div>
+                <textarea class="nx-auth-input" id="e-services" rows="3" placeholder="Hair, Nails, Makeup" style="resize:vertical; min-height:68px;">${window.esc((profile && Array.isArray(profile.services)) ? profile.services.join(", ") : "")}</textarea>
+                <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">Comma-separated list. Leave empty to receive all requests in the category.</div>
               </div>
               <div class="nx-form__row">
                 <div class="nx-form__label">Phone</div>
                 <input class="nx-auth-input" type="tel" id="e-phone" value="${window.esc((profile && profile.phone) || "")}" placeholder="+1 \u2026">
               </div>
 
-              <div class="nx-form__row" style="cursor:pointer;" id="row-use-location">
-                <div class="nx-form__label">Location</div>
-                <div class="nx-form__value">
-                  <span id="e-loc-label">${profile && profile.lat ? "Use my current location (refresh)" : "Use my current location"}</span>
-                  <span class="nx-form__chev">\u203a</span>
-                </div>
+              <div class="nx-form__row" style="flex-direction:column; align-items:stretch;">
+                ${window.nxLocationPicker ? window.nxLocationPicker.render("edit-loc", { initial: profile || {} }) : `<div>Loading location picker\u2026</div>`}
               </div>
 
               <div id="edit-err" style="display:none; color:#ef4444; font-size:13px; margin-top:14px;"></div>
@@ -178,30 +198,11 @@ window.Views.ProviderProfile = {
     document.getElementById("edit-btn").addEventListener("click", () => {
       viewPanel.style.display = "none";
       editPanel.style.display = "";
+      if (window.nxLocationPicker) window.nxLocationPicker.bind("edit-loc");
     });
     document.getElementById("cancel-edit-btn").addEventListener("click", () => {
       editPanel.style.display = "none";
       viewPanel.style.display = "";
-    });
-
-    // ---- Re-fetch location ----
-    let freshLat = profile && profile.lat || null;
-    let freshLng = profile && profile.lng || null;
-    document.getElementById("row-use-location").addEventListener("click", async () => {
-      const lbl = document.getElementById("e-loc-label");
-      lbl.textContent = "Getting location\u2026";
-      try {
-        const pos = await new Promise((resolve, reject) => {
-          if (!navigator.geolocation) return reject(new Error("no geo"));
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false, timeout: 30000, maximumAge: 5 * 60 * 1000,
-          });
-        });
-        freshLat = pos.coords.latitude; freshLng = pos.coords.longitude;
-        lbl.textContent = "Location ready \u2714";
-      } catch (e) {
-        lbl.textContent = "Couldn't get location. Tap to retry.";
-      }
     });
 
     // ---- Save edits ----
@@ -210,17 +211,45 @@ window.Views.ProviderProfile = {
       const err = document.getElementById("edit-err");
       const btn = document.getElementById("save-btn");
       err.style.display = "none";
+      const newCategory = (document.getElementById("e-category") && document.getElementById("e-category").value.trim())
+        || (profile ? profile.category : "beauty");
+      const servicesRaw = (document.getElementById("e-services") && document.getElementById("e-services").value.trim()) || "";
+      const servicesList = servicesRaw
+        ? servicesRaw.split(",").map(s => s.trim()).filter(Boolean)
+        : null;
+
+      // Read from the 3-option location picker; falls back to existing
+      // profile values when the user didn't touch it so we never wipe
+      // location just by saving an unrelated field.
+      const loc = window.nxLocationPicker
+        ? await window.nxLocationPicker.getValue("edit-loc")
+        : { source: "gps", lat: null, lng: null, address: null, city: null, state: null, zip: null };
+      const preserve = loc.lat == null && loc.lng == null && !loc.address && !loc.city && !loc.state && !loc.zip;
+
       const body = {
         business_name: document.getElementById("e-business").value.trim(),
-        category: profile ? profile.category : "beauty",
-        city: document.getElementById("e-city").value.trim() || null,
+        category: newCategory,
+        address: preserve ? (profile && profile.address) : loc.address,
+        city:    preserve ? (profile && profile.city)    : loc.city,
+        state:   preserve ? (profile && profile.state)   : loc.state,
+        zip:     preserve ? (profile && profile.zip)     : loc.zip,
+        lat:     preserve ? (profile && profile.lat)     : loc.lat,
+        lng:     preserve ? (profile && profile.lng)     : loc.lng,
         phone: document.getElementById("e-phone").value.trim() || null,
-        services: profile && Array.isArray(profile.services) ? profile.services : null,
-        lat: freshLat,
-        lng: freshLng,
+        services: servicesList,
       };
       if (!body.business_name) {
         err.textContent = "Business name is required."; err.style.display = "block"; return;
+      }
+      if (!body.category) {
+        err.textContent = "Category is required."; err.style.display = "block"; return;
+      }
+      // If category changed and services were previously set, warn user
+      if (profile && profile.category && profile.category !== newCategory && body.services && body.services.length) {
+        if (!confirm(`You're changing category to "${newCategory}". Your current services list (${body.services.join(", ")}) may not match the new category. Continue?`)) {
+          btn.disabled = false; btn.textContent = "Save changes";
+          return;
+        }
       }
       btn.disabled = true; btn.textContent = "Saving\u2026";
       try {

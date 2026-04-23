@@ -123,12 +123,28 @@ window.Views.ProviderDashboard = {
     if (toggleBtn) {
       toggleBtn.addEventListener("click", async () => {
         toggleBtn.disabled = true;
+        const originalLabel = toggleBtn.textContent;
+        toggleBtn.textContent = isOnline ? "Going offline..." : "Going online...";
+        // Retry once after 2s if the first call fails — backend cold start on
+        // free tier, flaky cell network, etc. 95% of the time the retry works.
+        const doCall = () => window.apiFetch("/api/providers/availability", {
+          method: "POST",
+          body: { is_online: !isOnline },
+        });
         try {
-          await window.apiFetch("/api/providers/availability", {
-            method: "POST",
-            body: { is_online: !isOnline },
-          });
-        } catch (e) { alert(e.message || "Failed"); }
+          await doCall();
+        } catch (e1) {
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            await doCall();
+          } catch (e2) {
+            const msg = (e2 && e2.message) || (e1 && e1.message) || "Network error";
+            alert("Couldn't update availability: " + msg + "\n\nCheck your connection and try again.");
+            toggleBtn.textContent = originalLabel;
+            toggleBtn.disabled = false;
+            return;
+          }
+        }
         this._fetchAndRender();
       });
     }
