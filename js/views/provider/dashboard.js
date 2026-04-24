@@ -139,7 +139,7 @@ window.Views.ProviderDashboard = {
             await doCall();
           } catch (e2) {
             const msg = (e2 && e2.message) || (e1 && e1.message) || "Network error";
-            alert("Couldn't update availability: " + msg + "\n\nCheck your connection and try again.");
+            window.nxAlert("Couldn't update availability: " + msg + "\n\nCheck your connection and try again.");
             toggleBtn.textContent = originalLabel;
             toggleBtn.disabled = false;
             return;

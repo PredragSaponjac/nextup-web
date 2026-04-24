@@ -264,10 +264,10 @@ window.Views.CustomerBroadcast = {
       try {
         coords = await this._getLocation();
       } catch (geoErr) {
-        alert(
+        await window.nxAlert(
           "Location required\n\n" +
           "NextUp needs your location to find nearby service providers. " +
-          "Please enable Location access for NextUp in iPhone Settings → Privacy & Security → Location Services, then try again.\n\n" +
+          "Please enable Location access for NextUp in iPhone Settings \u2192 Privacy & Security \u2192 Location Services, then try again.\n\n" +
           "Details: " + (geoErr.message || geoErr)
         );
         btn.disabled = false;
@@ -296,9 +296,9 @@ window.Views.CustomerBroadcast = {
         throw new Error("No request id returned");
       }
     } catch (e) {
-      alert("Could not broadcast: " + (e.message || e));
+      window.nxAlert("Could not " + (FORM_STATE.targetProviderId ? "send request" : "broadcast") + ": " + (e.message || e));
       btn.disabled = false;
-      btn.textContent = "Broadcast Request";
+      btn.textContent = FORM_STATE.targetProviderId ? "Send Request" : "Broadcast Request";
     }
   },
 

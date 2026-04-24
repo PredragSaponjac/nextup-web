@@ -158,10 +158,12 @@ window.Views.CustomerHome = {
           return;
         }
       }
-      const manual = prompt("Your city:", location);
-      if (!manual) return;
-      window.persistUser(Object.assign({}, window.state.currentUser || {}, { city: manual }));
-      window.Views.CustomerHome.render();
+      // Native prompt() is silently suppressed in Capacitor iOS WebViews,
+      // so show a guidance message instead. Providers can also set their
+      // city via Profile -> Edit.
+      await window.nxAlert(
+        "We couldn't detect your city automatically. Enable Location access for NextUp in Settings, then tap this pill again."
+      );
     });
 
     // When background auto-detection finishes, refresh the pill silently

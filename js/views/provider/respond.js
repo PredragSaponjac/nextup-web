@@ -13,7 +13,7 @@ window.Views.ProviderRespond = {
     try {
       req = await window.apiFetch(`/api/requests/${requestId}`);
     } catch (e) {
-      alert("Could not load request: " + e.message);
+      await window.nxAlert("Could not load request: " + e.message);
       window.navigate("dashboard");
       return;
     }
@@ -76,16 +76,24 @@ window.Views.ProviderRespond = {
       errEl.style.display = "none";
       btn.disabled = true; btn.textContent = "Sending…";
       try {
+        const priceRaw = document.getElementById("r-price").value;
+        const priceNum = parseFloat(priceRaw);
+        if (!priceRaw || isNaN(priceNum) || priceNum <= 0) {
+          errEl.textContent = "Please enter a price greater than 0.";
+          errEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Send offer";
+          return;
+        }
         await window.apiFetch(`/api/requests/${requestId}/respond`, {
           method: "POST",
           body: {
             available_time: document.getElementById("r-time").value.trim(),
-            price: parseFloat(document.getElementById("r-price").value),
+            price: priceNum,
             message: document.getElementById("r-msg").value.trim() || null,
           },
         });
         sessionStorage.removeItem("nx_respond_request_id");
-        alert("Offer sent. The customer will see it right away.");
+        window.toast && window.toast("Offer sent \u2014 customer is notified.", "success");
         window.navigate("dashboard");
       } catch (ex) {
         errEl.textContent = ex.message || "Could not send offer";

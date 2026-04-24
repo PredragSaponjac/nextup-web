@@ -142,7 +142,7 @@ window.Views.MessageThread = {
       await this._fetchAndRender(true);
       input.focus();
     } catch (e) {
-      alert("Couldn't send: " + (e.message || ""));
+      window.nxAlert("Couldn't send: " + (e.message || ""));
     } finally {
       btn.disabled = false;
       input.disabled = false;

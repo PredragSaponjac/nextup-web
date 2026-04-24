@@ -211,12 +211,12 @@ window.Views.BecomeProvider = {
 
         // Switch the UI into provider mode right away
         window.setActiveMode("provider");
-        alert("You're a provider now. Tap Go Online on the Dashboard to start receiving requests.");
+        window.toast && window.toast("You're a provider now. Tap Go Online to start.", "success");
         window.navigate("dashboard");
       } catch (ex) {
         errEl.textContent = ex.message || "Could not create provider profile";
         errEl.style.display = "block";
-        btn.disabled = false; btn.textContent = "Start Free Month";
+        btn.disabled = false; btn.textContent = "Start 3 Months Free";
       }
     });
   },

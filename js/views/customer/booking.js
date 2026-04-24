@@ -79,7 +79,7 @@ window.Views.CustomerBooking = {
             </div>
             <div class="nx-confirmed__row">
               <span class="nx-confirmed__label">Price</span>
-              <span class="nx-confirmed__val">$${Math.round(accepted.price)}</span>
+              <span class="nx-confirmed__val">${accepted.price != null && !isNaN(accepted.price) ? "$" + Math.round(accepted.price) : "\u2014"}</span>
             </div>
           </div>
 
