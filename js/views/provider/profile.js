@@ -229,14 +229,23 @@ window.Views.ProviderProfile = {
       const existingServices = Array.isArray(profile.services) ? profile.services : [];
       const byCat = new Map();
       allCats.forEach(k => byCat.set(k, []));
+      // Services that don't map to any known category are preserved on the
+      // primary card so they don't silently vanish when the user saves.
+      const unrecognized = [];
       existingServices.forEach(svc => {
+        let placed = false;
         for (const k of allCats) {
           if (servicesForCategory(k).includes(svc)) {
             byCat.get(k).push(svc);
+            placed = true;
             break;
           }
         }
+        if (!placed) unrecognized.push(svc);
       });
+      if (unrecognized.length && allCats.length) {
+        byCat.get(allCats[0]).push(...unrecognized);
+      }
       allCats.forEach(k => catList.push({ key: k, services: byCat.get(k) || [] }));
     }
 
