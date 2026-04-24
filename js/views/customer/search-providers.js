@@ -60,6 +60,10 @@
             </div>
 
             <div id="sp-filters" style="display:none; padding:4px 0 8px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-family:var(--nx-font-sans); font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--nx-text-muted);">Rating</span>
+                <span style="display:inline-block; padding:2px 7px; background:#f0b400; color:#000; font-size:9px; font-weight:700; letter-spacing:0.08em; border-radius:999px; text-transform:uppercase;">Beta</span>
+              </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
                 <button type="button" class="nx-filter-chip is-active" data-rating="0">All \u2605</button>
                 <button type="button" class="nx-filter-chip" data-rating="4">4\u2605+</button>
@@ -68,6 +72,9 @@
               <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--nx-text-muted); cursor:pointer;">
                 <input type="checkbox" id="sp-google-only"> Only providers also on Google
               </label>
+              <div style="font-size:11px; color:var(--nx-text-muted); font-family:var(--nx-font-sans); margin-top:8px; line-height:1.45;">
+                Beta: ratings come from NextUp customers only (not Google). If results are thin, try broadcasting instead.
+              </div>
             </div>
 
             <div id="sp-results" class="nx-search__results"></div>

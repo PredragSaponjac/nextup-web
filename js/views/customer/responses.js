@@ -18,6 +18,7 @@
    ============================================================= */
 
 let NX_POLL = null;
+let NX_SORT = "rating"; // rating | price | distance | speed
 
 const TF_ORDER = ["within_1h", "within_2h", "today", "tomorrow"];
 const TF_LABEL = {
@@ -67,7 +68,11 @@ window.Views.CustomerResponses = {
           pieces.push(this._renderExpandCard(tf));
         }
       } else {
-        pieces.push(responses.map(r => this._renderCard(r)).join(""));
+        if (responses.length > 1) {
+          pieces.push(this._renderSortChips());
+        }
+        const sorted = this._sortResponses(responses.slice());
+        pieces.push(sorted.map(r => this._renderCard(r)).join(""));
       }
 
       window.mount(`
@@ -97,6 +102,14 @@ window.Views.CustomerResponses = {
         window.navigate("my-requests");
       });
 
+      // Sort chips
+      document.querySelectorAll("[data-sort]").forEach(chip => {
+        chip.addEventListener("click", () => {
+          NX_SORT = chip.dataset.sort;
+          this._fetchAndRender(true);
+        });
+      });
+
       document.querySelectorAll("[data-book]").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           e.stopPropagation();
@@ -116,6 +129,47 @@ window.Views.CustomerResponses = {
       window.bindCustomerTabBar();
     } catch (e) {
       if (!silent) alert("Could not load responses: " + e.message);
+    }
+  },
+
+  _renderSortChips() {
+    const chips = [
+      { key: "rating",   label: "Best rated" },
+      { key: "price",    label: "Cheapest" },
+      { key: "distance", label: "Closest" },
+      { key: "speed",    label: "Fastest to reply" },
+    ];
+    return `
+      <div style="padding:4px 0 12px;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+          ${chips.map(c => `
+            <button type="button" class="nx-filter-chip ${c.key === NX_SORT ? 'is-active' : ''}" data-sort="${c.key}">${c.label}</button>
+          `).join("")}
+        </div>
+        <div style="font-size:11px; color:var(--nx-text-muted); font-family:var(--nx-font-sans);">
+          Sort \u00b7 ratings from NextUp customers only (Beta)
+        </div>
+      </div>
+    `;
+  },
+
+  _sortResponses(list) {
+    const last = Number.POSITIVE_INFINITY;
+    const lowFirst = (v) => (v == null ? last : v);
+    switch (NX_SORT) {
+      case "price":
+        return list.sort((a, b) => lowFirst(a.price) - lowFirst(b.price));
+      case "distance":
+        return list.sort((a, b) => lowFirst(a.distance_miles) - lowFirst(b.distance_miles));
+      case "speed":
+        return list.sort((a, b) => {
+          const ta = a.created_at ? Date.parse(a.created_at) : last;
+          const tb = b.created_at ? Date.parse(b.created_at) : last;
+          return ta - tb;
+        });
+      case "rating":
+      default:
+        return list.sort((a, b) => (Number(b.avg_rating || 0)) - (Number(a.avg_rating || 0)));
     }
   },
 
