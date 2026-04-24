@@ -54,19 +54,25 @@ function _nxBootMsg(text) {
   // the user record in the background after the UI is already up, so a cold-start
   // Render backend never leaves the user staring at a black screen.
   try {
-    // Dual-role UX: every cold launch lands on the customer Home grid.
-    // Home is the welcoming entry point with all 14 categories; provider
-    // mode is one tap away via Profile -> "Switch to provider mode".
-    // Push notifications that deep-link to a specific screen bypass this
-    // because window.location.hash is already set.
-    // Unauthenticated users always go to role-select regardless of hash
-    // so a stale #dashboard deep-link can't render an auth-required view.
+    // Dual-role UX: every cold launch lands on the customer Home grid,
+    // even if the last session was left on #dashboard (Capacitor WebView
+    // persists the hash across cold launches). Home is the welcoming
+    // entry point with all 14 categories; provider mode is one tap away
+    // via Profile -> "Switch to provider mode".
+    //
+    // We preserve the hash ONLY for a small allowlist of routes that
+    // indicate an intentional deep-link arrival (push notifications,
+    // from-email magic links, etc.). For everything else we force home.
+    const DEEP_LINK_ROUTES = ["responses/", "booking/", "review/", "thread/", "broadcast/"];
+    const currentHash = (window.location.hash || "").replace(/^#/, "");
+    const isDeepLink = DEEP_LINK_ROUTES.some(r => currentHash.startsWith(r));
+
     if (!window.state.token) {
       window.navigate("role-select");
-    } else if (!window.location.hash) {
-      window.navigate("home");
-    } else {
+    } else if (isDeepLink) {
       await window.router();
+    } else {
+      window.navigate("home");
     }
   } catch (e) {
     console.error("Initial route error:", e);
