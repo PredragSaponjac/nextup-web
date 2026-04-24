@@ -1015,3 +1015,34 @@
   font-size: 13px;
   font-family: var(--nx-font-sans);
 }
+
+/* --- Swipe-to-reveal row (History) -------------------------------- */
+.nx-swipe {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border-radius: 14px;
+}
+.nx-swipe__card {
+  position: relative;
+  z-index: 2;
+  transform: translateX(0);
+  will-change: transform;
+  margin-bottom: 0;
+  touch-action: pan-y;
+}
+.nx-swipe__action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 90px;
+  z-index: 1;
+  border: 0;
+  color: #fff;
+  font-family: var(--nx-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
