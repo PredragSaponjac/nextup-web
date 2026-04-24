@@ -54,11 +54,14 @@ function _nxBootMsg(text) {
   // the user record in the background after the UI is already up, so a cold-start
   // Render backend never leaves the user staring at a black screen.
   try {
-    const activeMode = (window.getActiveMode && window.getActiveMode()) || "customer";
-    const home = activeMode === "provider" ? "dashboard" : "home";
+    // Dual-role UX: every cold launch lands on the customer Home grid.
+    // Home is the welcoming entry point with all 14 categories; provider
+    // mode is one tap away via Profile -> "Switch to provider mode".
+    // Push notifications that deep-link to a specific screen bypass this
+    // because window.location.hash is already set.
     if (!window.location.hash) {
       if (!window.state.token) window.navigate("role-select");
-      else window.navigate(home);
+      else window.navigate("home");
     } else {
       await window.router();
     }
