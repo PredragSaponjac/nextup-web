@@ -60,8 +60,8 @@ window.Views.CustomerReview = {
           </div>
 
           <button type="button" class="nx-link-inline" id="more-detail-btn"
-            style="display:block; margin:18px auto 4px; background:none; border:0; color:var(--nx-text-muted); font-family:var(--nx-font-sans); font-size:13px; cursor:pointer; text-decoration:underline;">
-            Want to give exact stars?
+            style="display:block; margin:18px auto 4px; background:none; border:0; color:var(--nx-text); font-family:var(--nx-font-sans); font-size:14px; font-weight:500; cursor:pointer; text-decoration:underline;">
+            Add more detail \u2014 rate with stars
           </button>
 
           <div id="stars-row" style="display:none; padding:8px 0 12px;">
@@ -139,7 +139,7 @@ window.Views.CustomerReview = {
         window.toast && window.toast("Thanks for rating!", "success");
         window.navigate("my-requests");
       } catch (e) {
-        alert("Could not submit: " + (e.message || "network error"));
+        window.nxAlert("Could not submit: " + (e.message || "network error"));
         submitBtn.disabled = false;
         submitBtn.textContent = "Submit";
       }
