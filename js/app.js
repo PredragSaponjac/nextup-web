@@ -59,9 +59,12 @@ function _nxBootMsg(text) {
     // mode is one tap away via Profile -> "Switch to provider mode".
     // Push notifications that deep-link to a specific screen bypass this
     // because window.location.hash is already set.
-    if (!window.location.hash) {
-      if (!window.state.token) window.navigate("role-select");
-      else window.navigate("home");
+    // Unauthenticated users always go to role-select regardless of hash
+    // so a stale #dashboard deep-link can't render an auth-required view.
+    if (!window.state.token) {
+      window.navigate("role-select");
+    } else if (!window.location.hash) {
+      window.navigate("home");
     } else {
       await window.router();
     }

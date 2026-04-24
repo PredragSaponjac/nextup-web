@@ -323,11 +323,20 @@ window.Views.ProviderProfile = {
       const entry = catList[idx];
       if (!entry) return;
       const all = servicesForCategory(entry.key);
-      if (!all.length) return;
+      if (!all.length) {
+        window.nxAlert("This category has no services defined yet. Remove it and pick another.");
+        return;
+      }
+      // Merge taxonomy services with any unrecognized legacy services
+      // pinned to this card so the user can see and uncheck them too.
+      const known = new Set(all);
+      const extras = (entry.services || []).filter(s => !known.has(s));
+      const options = all.map(s => ({ value: s, label: s }))
+        .concat(extras.map(s => ({ value: s, label: s + " (legacy)" })));
       const picked = await window.nxMultiSheet({
         title: taxonomy[entry.key]?.label || entry.key,
         hint: "Tap the services you offer. Uncheck any you don't.",
-        options: all.map(s => ({ value: s, label: s })),
+        options,
         selectedValues: entry.services && entry.services.length ? entry.services : all,
         doneLabel: "Save",
       });
@@ -412,11 +421,15 @@ window.Views.ProviderProfile = {
       try {
         await window.apiFetch("/api/providers/profile", { method: "POST", body });
         window.toast && window.toast("Profile updated.", "success");
-        // Re-render to reflect saved state
-        window.Views.ProviderProfile.render();
+        // Re-render to reflect saved state. Await + re-enable the button in
+        // finally so the user is never stuck with a dead Save button if the
+        // re-render itself throws.
+        try { await window.Views.ProviderProfile.render(); }
+        catch (re) { console.error("profile re-render after save failed:", re); }
       } catch (ex) {
         err.textContent = ex.message || "Couldn't save.";
         err.style.display = "block";
+      } finally {
         btn.disabled = false; btn.textContent = "Save changes";
       }
     });
