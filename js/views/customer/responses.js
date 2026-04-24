@@ -128,7 +128,7 @@ window.Views.CustomerResponses = {
 
       window.bindCustomerTabBar();
     } catch (e) {
-      if (!silent) alert("Could not load responses: " + e.message);
+      if (!silent) window.nxAlert("Could not load responses: " + e.message);
     }
   },
 
@@ -227,9 +227,9 @@ window.Views.CustomerResponses = {
       const res = await window.apiFetch(`/api/requests/${this.requestId}/expand-search`, { method: "POST", body: {} });
       const n = (res && res.newly_notified) || 0;
       const r = (res && res.radius_miles) || null;
-      alert(`Expanded to ${r} mi. Notified ${n} more provider${n === 1 ? "" : "s"}.`);
+      window.toast && window.toast(`Expanded to ${r} mi \u00b7 notified ${n} more`, "success");
     } catch (e) {
-      alert("Couldn't expand: " + (e.message || "network error"));
+      window.nxAlert("Couldn't expand: " + (e.message || "network error"));
     }
     await this._fetchAndRender(true);
   },
