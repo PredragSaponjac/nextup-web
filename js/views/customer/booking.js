@@ -10,8 +10,10 @@ window.Views.CustomerBooking = {
     window.mount(`
       <div class="nx-screen">
         <div class="nx-screen__body" id="booking-body">
-          <header class="nx-appbar nx-appbar--lockup">
-            <span class="nx-appbar__lockup">Next<span class="nx-appbar__lockup-up">Up</span></span>
+          <header class="nx-appbar nx-appbar--with-back">
+            <button class="nx-appbar__back" onclick="window.navigate('my-requests')" aria-label="Back">\u2039</button>
+            <span class="nx-appbar__title">Booking</span>
+            <div></div>
           </header>
           <div class="nx-empty">
             <div class="nx-empty__title">Loading…</div>
@@ -29,8 +31,10 @@ window.Views.CustomerBooking = {
 
       if (!accepted) {
         body.innerHTML = `
-          <header class="nx-appbar nx-appbar--lockup">
-            <span class="nx-appbar__lockup">Next<span class="nx-appbar__lockup-up">Up</span></span>
+          <header class="nx-appbar nx-appbar--with-back">
+            <button class="nx-appbar__back" onclick="window.navigate('my-requests')" aria-label="Back">\u2039</button>
+            <span class="nx-appbar__title">Booking</span>
+            <div></div>
           </header>
           <div class="nx-empty">
             <div class="nx-empty__title">No booking yet</div>
@@ -44,8 +48,10 @@ window.Views.CustomerBooking = {
       const providerName = accepted.business_name || accepted.provider_name;
 
       body.innerHTML = `
-        <header class="nx-appbar nx-appbar--lockup">
-          <span class="nx-appbar__lockup">Next<span class="nx-appbar__lockup-up">Up</span></span>
+        <header class="nx-appbar nx-appbar--with-back">
+          <button class="nx-appbar__back" onclick="window.navigate('my-requests')" aria-label="Back">\u2039</button>
+          <span class="nx-appbar__title">Booking</span>
+          <div></div>
         </header>
 
         <div class="nx-confirmed">

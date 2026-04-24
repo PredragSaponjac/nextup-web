@@ -73,9 +73,10 @@ window.Views.CustomerResponses = {
       window.mount(`
         <div class="nx-screen">
           <div class="nx-screen__body">
-            <header class="nx-appbar nx-appbar--lockup">
-              <span class="nx-appbar__lockup">Next<span class="nx-appbar__lockup-up">Up</span></span>
-              <span class="nx-beta-pill" style="margin-left:8px; display:inline-block; background:#f0b400; color:#000; font-size:10px; letter-spacing:0.08em; font-weight:700; padding:2px 8px; border-radius:999px; text-transform:uppercase; vertical-align:middle;">Beta</span>
+            <header class="nx-appbar nx-appbar--with-back">
+              <button class="nx-appbar__back" id="resp-back-btn" aria-label="Back">\u2039</button>
+              <span class="nx-appbar__title">Responses</span>
+              <div></div>
             </header>
 
             <div class="nx-listhead">
@@ -89,6 +90,12 @@ window.Views.CustomerResponses = {
           ${window.customerTabBar("requests")}
         </div>
       `);
+
+      const backBtn = document.getElementById("resp-back-btn");
+      if (backBtn) backBtn.addEventListener("click", () => {
+        clearInterval(NX_POLL);
+        window.navigate("my-requests");
+      });
 
       document.querySelectorAll("[data-book]").forEach(btn => {
         btn.addEventListener("click", async (e) => {
