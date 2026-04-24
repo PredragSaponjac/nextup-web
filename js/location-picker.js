@@ -165,24 +165,29 @@
       const checked = root.querySelector(`input[name="${prefix}-src"]:checked`);
       const source = checked ? checked.value : "gps";
 
-      if (source === "gps") {
-        return {
-          source: "gps",
-          lat: root._lat ?? null,
-          lng: root._lng ?? null,
-          address: null,
-          city: null,
-          state: null,
-          zip: null,
-        };
-      }
-
-      // Address mode — read fields
+      // Always read address inputs — they exist in the DOM even when the
+      // GPS panel is shown (just hidden). Returning them unconditionally
+      // avoids a class of bugs where a user typed city/state/zip but the
+      // picker was still in GPS source, causing the caller's preserve
+      // logic to silently wipe the address fields on save.
       const address = (document.getElementById(`${prefix}-address`) || {}).value || "";
       const city    = (document.getElementById(`${prefix}-city`)    || {}).value || "";
       const state   = (document.getElementById(`${prefix}-state`)   || {}).value || "";
       const zip     = (document.getElementById(`${prefix}-zip`)     || {}).value || "";
 
+      if (source === "gps") {
+        return {
+          source: "gps",
+          lat: root._lat ?? null,
+          lng: root._lng ?? null,
+          address: address.trim() || null,
+          city: city.trim() || null,
+          state: state.trim() || null,
+          zip: zip.trim() || null,
+        };
+      }
+
+      // Address mode — fields already read above (shared with GPS branch)
       const result = {
         source,
         lat: null,
