@@ -1103,3 +1103,56 @@
   padding: 6px 8px;
 }
 .nx-rate-chip--done:hover { background: transparent; }
+
+/* --- Multi-category edit cards (provider profile) ----------------- */
+.nx-cat-card {
+  background: #141414;
+  border: 1px solid var(--nx-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.nx-cat-card:hover { background: #1a1a1a; }
+.nx-cat-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.nx-cat-card__label {
+  font-family: var(--nx-font-serif);
+  font-size: 18px;
+  color: var(--nx-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nx-cat-card__primary {
+  font-family: var(--nx-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #fafaf9;
+  color: #000;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.nx-cat-card__sub {
+  font-family: var(--nx-font-sans);
+  font-size: 12px;
+  color: var(--nx-text-muted);
+  margin-top: 4px;
+}
+.nx-cat-card__remove {
+  background: transparent;
+  border: 0;
+  color: var(--nx-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.nx-cat-card__remove:hover { color: #ef4444; }

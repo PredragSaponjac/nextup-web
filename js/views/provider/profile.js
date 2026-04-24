@@ -118,21 +118,16 @@ window.Views.ProviderProfile = {
                 <div class="nx-form__label">Business name</div>
                 <input class="nx-auth-input" type="text" id="e-business" required value="${window.esc((profile && profile.business_name) || "")}">
               </div>
-              <div class="nx-form__row">
-                <div class="nx-form__label">Category</div>
-                <select class="nx-auth-input" id="e-category" required>
-                  <option value="">Select category\u2026</option>
-                  ${Object.keys(window.SERVICES_TAXONOMY || {}).map(k => {
-                    const cat = window.SERVICES_TAXONOMY[k];
-                    const sel = profile && profile.category === k ? "selected" : "";
-                    return `<option value="${k}" ${sel}>${window.esc(cat.label || k)}</option>`;
-                  }).join("")}
-                </select>
-              </div>
-              <div class="nx-form__row">
-                <div class="nx-form__label">Services you offer</div>
-                <textarea class="nx-auth-input" id="e-services" rows="3" placeholder="Hair, Nails, Makeup" style="resize:vertical; min-height:68px;">${window.esc((profile && Array.isArray(profile.services)) ? profile.services.join(", ") : "")}</textarea>
-                <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">Comma-separated list. Leave empty to receive all requests in the category.</div>
+              <div class="nx-form__row" style="flex-direction:column; align-items:stretch;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                  <div class="nx-form__label" style="margin:0;">Services you offer</div>
+                  <div style="font-size:11px; color:var(--nx-text-muted);">up to 3 categories</div>
+                </div>
+                <div id="e-cats-list"></div>
+                <button type="button" id="e-add-cat-btn" class="nx-cta"
+                  style="background:transparent; border:1px dashed var(--nx-border); color:var(--nx-text-muted); margin-top:8px; padding:12px;">
+                  + Add another category
+                </button>
               </div>
               <div class="nx-form__row">
                 <div class="nx-form__label">Phone</div>
@@ -211,18 +206,170 @@ window.Views.ProviderProfile = {
       viewPanel.style.display = "";
     });
 
+    // ---- Multi-category services picker ----
+    // State: array of { key, services: [...] } (order matters — first = primary)
+    const catList = [];
+    // Seed from existing profile: primary + extra_categories. Split the
+    // services array across categories by looking up each service in each
+    // category's service names.
+    const taxonomy = window.SERVICES_TAXONOMY || {};
+    const servicesForCategory = (catKey) => {
+      const cat = taxonomy[catKey];
+      if (!cat) return [];
+      const out = [];
+      Object.values(cat.subcategories || {}).forEach(sub => {
+        (sub.services || []).forEach(s => out.push(s));
+      });
+      return out;
+    };
+    if (profile) {
+      const primary = profile.category;
+      const extras = Array.isArray(profile.extra_categories) ? profile.extra_categories : [];
+      const allCats = primary ? [primary, ...extras.filter(e => e !== primary)] : extras;
+      const existingServices = Array.isArray(profile.services) ? profile.services : [];
+      const byCat = new Map();
+      allCats.forEach(k => byCat.set(k, []));
+      existingServices.forEach(svc => {
+        for (const k of allCats) {
+          if (servicesForCategory(k).includes(svc)) {
+            byCat.get(k).push(svc);
+            break;
+          }
+        }
+      });
+      allCats.forEach(k => catList.push({ key: k, services: byCat.get(k) || [] }));
+    }
+
+    const renderCatList = () => {
+      const host = document.getElementById("e-cats-list");
+      if (!host) return;
+      if (!catList.length) {
+        host.innerHTML = `
+          <div style="padding:14px; border:1px dashed var(--nx-border); border-radius:12px; font-size:13px; color:var(--nx-text-muted); text-align:center;">
+            No category picked yet. Tap <strong>Add another category</strong> to start.
+          </div>`;
+      } else {
+        host.innerHTML = catList.map((c, idx) => {
+          const cat = taxonomy[c.key] || {};
+          const total = servicesForCategory(c.key).length;
+          const count = (c.services || []).length;
+          const isPrimary = idx === 0;
+          return `
+            <div class="nx-cat-card" data-cat-idx="${idx}">
+              <div class="nx-cat-card__head">
+                <div>
+                  <div class="nx-cat-card__label">
+                    ${window.esc(cat.label || c.key)}
+                    ${isPrimary ? '<span class="nx-cat-card__primary">Primary</span>' : ''}
+                  </div>
+                  <div class="nx-cat-card__sub">${count} of ${total} services \u00b7 tap to edit</div>
+                </div>
+                <button type="button" class="nx-cat-card__remove" data-remove="${idx}" aria-label="Remove category">\u00d7</button>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      // Wire: tap card → edit services; tap × → remove
+      host.querySelectorAll("[data-cat-idx]").forEach(card => {
+        card.addEventListener("click", async (e) => {
+          if (e.target.closest("[data-remove]")) return; // X button handles itself
+          const idx = Number(card.dataset.catIdx);
+          await editCategoryServices(idx);
+        });
+      });
+      host.querySelectorAll("[data-remove]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const idx = Number(btn.dataset.remove);
+          if (catList.length === 1) {
+            window.nxAlert("You need at least one category. Pick a replacement before removing this one.");
+            return;
+          }
+          const name = taxonomy[catList[idx].key]?.label || catList[idx].key;
+          const ok = await window.nxConfirm(`Remove "${name}" from your services?`, { okLabel: "Remove", danger: true });
+          if (!ok) return;
+          catList.splice(idx, 1);
+          renderCatList();
+          updateAddButton();
+        });
+      });
+    };
+
+    const updateAddButton = () => {
+      const btn = document.getElementById("e-add-cat-btn");
+      if (!btn) return;
+      if (catList.length >= 3) {
+        btn.style.display = "none";
+      } else {
+        btn.style.display = "";
+        btn.textContent = catList.length === 0 ? "+ Pick your first category" : "+ Add another category";
+      }
+    };
+
+    const editCategoryServices = async (idx) => {
+      const entry = catList[idx];
+      if (!entry) return;
+      const all = servicesForCategory(entry.key);
+      if (!all.length) return;
+      const picked = await window.nxMultiSheet({
+        title: taxonomy[entry.key]?.label || entry.key,
+        hint: "Tap the services you offer. Uncheck any you don't.",
+        options: all.map(s => ({ value: s, label: s })),
+        selectedValues: entry.services && entry.services.length ? entry.services : all,
+        doneLabel: "Save",
+      });
+      if (picked == null) return;
+      entry.services = picked;
+      renderCatList();
+    };
+
+    const addCategoryFlow = async () => {
+      if (catList.length >= 3) return;
+      const chosen = catList.map(c => c.key);
+      const options = Object.keys(taxonomy)
+        .filter(k => !chosen.includes(k))
+        .map(k => ({ value: k, label: taxonomy[k].label || k }));
+      if (!options.length) return;
+      const picked = await window.nxSheet({
+        title: catList.length === 0 ? "Pick your main category" : "Add a category",
+        options,
+      });
+      if (picked == null) return;
+      // Default: all services in that category selected
+      const allSvcs = servicesForCategory(picked);
+      catList.push({ key: picked, services: allSvcs });
+      renderCatList();
+      updateAddButton();
+      // Immediately let them refine
+      await editCategoryServices(catList.length - 1);
+    };
+
+    document.getElementById("e-add-cat-btn").addEventListener("click", addCategoryFlow);
+    renderCatList();
+    updateAddButton();
+
     // ---- Save edits ----
     document.getElementById("edit-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const err = document.getElementById("edit-err");
       const btn = document.getElementById("save-btn");
       err.style.display = "none";
-      const newCategory = (document.getElementById("e-category") && document.getElementById("e-category").value.trim())
-        || (profile ? profile.category : "beauty");
-      const servicesRaw = (document.getElementById("e-services") && document.getElementById("e-services").value.trim()) || "";
-      const servicesList = servicesRaw
-        ? servicesRaw.split(",").map(s => s.trim()).filter(Boolean)
-        : null;
+
+      if (!catList.length) {
+        err.textContent = "Pick at least one service category."; err.style.display = "block"; return;
+      }
+      const primaryCategory = catList[0].key;
+      const extraCategories = catList.slice(1).map(c => c.key);
+      // Flatten services across all selected categories
+      const mergedServices = [];
+      const seen = new Set();
+      catList.forEach(c => (c.services || []).forEach(s => {
+        if (!seen.has(s)) { mergedServices.push(s); seen.add(s); }
+      }));
+      if (!mergedServices.length) {
+        err.textContent = "Pick at least one service you offer."; err.style.display = "block"; return;
+      }
 
       // Read from the 3-option location picker; falls back to existing
       // profile values when the user didn't touch it so we never wipe
@@ -234,7 +381,8 @@ window.Views.ProviderProfile = {
 
       const body = {
         business_name: document.getElementById("e-business").value.trim(),
-        category: newCategory,
+        category: primaryCategory,
+        extra_categories: extraCategories,
         address: preserve ? (profile && profile.address) : loc.address,
         city:    preserve ? (profile && profile.city)    : loc.city,
         state:   preserve ? (profile && profile.state)   : loc.state,
@@ -242,25 +390,11 @@ window.Views.ProviderProfile = {
         lat:     preserve ? (profile && profile.lat)     : loc.lat,
         lng:     preserve ? (profile && profile.lng)     : loc.lng,
         phone: document.getElementById("e-phone").value.trim() || null,
-        services: servicesList,
+        services: mergedServices,
         google_business_url: (document.getElementById("e-google-url").value.trim() || null),
       };
       if (!body.business_name) {
         err.textContent = "Business name is required."; err.style.display = "block"; return;
-      }
-      if (!body.category) {
-        err.textContent = "Category is required."; err.style.display = "block"; return;
-      }
-      // If category changed and services were previously set, warn user
-      if (profile && profile.category && profile.category !== newCategory && body.services && body.services.length) {
-        const proceed = await window.nxConfirm(
-          `You're changing category to "${newCategory}". Your current services list (${body.services.join(", ")}) may not match the new category. Continue?`,
-          { okLabel: "Continue" }
-        );
-        if (!proceed) {
-          btn.disabled = false; btn.textContent = "Save changes";
-          return;
-        }
       }
       btn.disabled = true; btn.textContent = "Saving\u2026";
       try {
