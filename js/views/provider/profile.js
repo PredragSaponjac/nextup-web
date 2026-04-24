@@ -17,9 +17,12 @@ window.Views.ProviderProfile = {
     const biometricAvailable = await (window.nxBiometricAvailable ? window.nxBiometricAvailable() : false);
     const biometricOn = !!window.state.biometricEnabled;
 
-    const catLabel = (profile && window.SERVICES_TAXONOMY && window.SERVICES_TAXONOMY[profile.category])
-      ? window.SERVICES_TAXONOMY[profile.category].label
-      : (profile && profile.category) || "Not set";
+    const labelForCat = (k) => (window.SERVICES_TAXONOMY && window.SERVICES_TAXONOMY[k] && window.SERVICES_TAXONOMY[k].label) || k;
+    const primaryLabel = (profile && profile.category) ? labelForCat(profile.category) : "Not set";
+    const extraList = (profile && Array.isArray(profile.extra_categories)) ? profile.extra_categories : [];
+    const catLabel = extraList.length
+      ? `${primaryLabel} + ${extraList.map(labelForCat).join(", ")}`
+      : primaryLabel;
 
     window.mount(`
       <div class="nx-screen">
