@@ -49,7 +49,7 @@ window.Views.ProviderProfile = {
               <div class="nx-form__value"><span>${window.esc((profile && profile.business_name) || "Not set")}</span></div>
             </div>
             <div class="nx-form__row" style="cursor:default;">
-              <div class="nx-form__label">Category</div>
+              <div class="nx-form__label">${extraList.length ? "Categories" : "Category"}</div>
               <div class="nx-form__value"><span>${window.esc(catLabel)}</span></div>
             </div>
             <div class="nx-form__row" style="cursor:default;">
