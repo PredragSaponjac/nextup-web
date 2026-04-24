@@ -82,6 +82,25 @@ window.Views.ProviderHistory = {
 
       ${itemsHTML}
     `;
+
+    this._wireRateButtons();
+  },
+
+  _wireRateButtons() {
+    document.querySelectorAll("[data-rate-customer]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const reqId = btn.dataset.rateCustomer;
+        const custId = btn.dataset.customerId;
+        const custName = btn.dataset.customerName || "Customer";
+        window.Views.ProviderRateCustomer.open({
+          requestId: Number(reqId),
+          customerId: Number(custId),
+          customerName: custName,
+          onDone: () => window.Views.ProviderHistory.render(),
+        });
+      });
+    });
   },
 
   _renderItem(r) {
@@ -89,8 +108,27 @@ window.Views.ProviderHistory = {
     const color = STATUS_COLORS[status] || STATUS_COLORS.sent;
     const pill = `<span style="display:inline-block; padding:3px 10px; background:${color.bg}; color:${color.fg}; border-radius:999px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em;">${window.esc(status)}</span>`;
     const cat = CAT_LABELS[r.category] || r.category || "";
-    const price = r.price != null ? `$${Math.round(r.price)}` : "—";
+    const price = r.price != null ? `$${Math.round(r.price)}` : "\u2014";
     const when = r.response_created_at ? window.timeAgo(r.response_created_at) : "";
+
+    // Rate-customer chip: only show for accepted bookings, after the fact.
+    // If already rated, show the star count inline (non-tappable).
+    let rateChip = "";
+    if (status === "accepted" && r.request_status && (r.request_status === "booked" || r.request_status === "completed")) {
+      if (r.customer_rating_given) {
+        const stars = "\u2605".repeat(r.customer_rating_given) + "\u2606".repeat(5 - r.customer_rating_given);
+        rateChip = `<span class="nx-rate-chip nx-rate-chip--done" title="Rated">${stars}</span>`;
+      } else {
+        rateChip = `
+          <button type="button" class="nx-rate-chip"
+            data-rate-customer="${r.request_id}"
+            data-customer-id="${r.customer_id}"
+            data-customer-name="${window.esc(r.customer_name || "Customer")}">
+            \u2605 Rate customer
+          </button>`;
+      }
+    }
+
     return `
       <div class="nx-respcard" style="cursor:default;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
@@ -99,13 +137,16 @@ window.Views.ProviderHistory = {
         </div>
         <div class="nx-respcard__meta" style="font-size:13px; padding-top:4px;">
           <span>${window.esc(price)}</span>
-          <span class="nx-respcard__dot">·</span>
+          <span class="nx-respcard__dot">\u00b7</span>
           <span>${window.esc(r.available_time || "")}</span>
-          <span class="nx-respcard__dot">·</span>
+          <span class="nx-respcard__dot">\u00b7</span>
           <span>${window.esc(cat)}</span>
         </div>
-        <div style="font-size:12px; color:var(--nx-text-muted); padding-top:4px;">
-          ${window.esc(r.customer_name || "Customer")} · ${window.esc(when)}
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; gap:10px;">
+          <div style="font-size:12px; color:var(--nx-text-muted); flex:1;">
+            ${window.esc(r.customer_name || "Customer")} \u00b7 ${window.esc(when)}
+          </div>
+          ${rateChip}
         </div>
       </div>
     `;
