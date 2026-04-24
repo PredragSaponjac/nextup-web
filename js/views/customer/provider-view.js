@@ -115,8 +115,17 @@
 
         ${phone ? `
           <button class="nx-cta" id="pv-call-btn" type="button"
-            style="background:transparent; color:var(--nx-text); border:1px solid var(--nx-border); margin-bottom:24px;">
+            style="background:transparent; color:var(--nx-text); border:1px solid var(--nx-border); margin-bottom:14px;">
             Call ${window.esc(phone)}
+          </button>
+        ` : ""}
+
+        ${p.google_business_url ? `
+          <button class="nx-cta" id="pv-google-btn" type="button"
+            style="background:transparent; color:var(--nx-text); border:1px solid var(--nx-border); margin-bottom:24px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); text-transform:uppercase; letter-spacing:0.06em;">\u2709 Also on</span>
+            <span style="font-weight:600;">Google</span>
+            <span style="font-size:13px; color:var(--nx-text-muted);">\u2197</span>
           </button>
         ` : ""}
 
@@ -136,6 +145,13 @@
       if (callBtn) {
         callBtn.addEventListener("click", () => {
           window.location.href = `tel:${phone.replace(/[^+\d]/g, "")}`;
+        });
+      }
+
+      const googleBtn = document.getElementById("pv-google-btn");
+      if (googleBtn && p.google_business_url) {
+        googleBtn.addEventListener("click", () => {
+          window.nxOpenExternal(p.google_business_url);
         });
       }
     },

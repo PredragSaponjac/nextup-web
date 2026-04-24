@@ -1046,3 +1046,33 @@
   letter-spacing: 0.02em;
   cursor: pointer;
 }
+
+/* --- Filter chips (search-providers) ------------------------------ */
+.nx-filter-chip {
+  border: 1px solid var(--nx-border);
+  background: transparent;
+  color: var(--nx-text-muted);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: var(--nx-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.nx-filter-chip.is-active {
+  background: #fafaf9;
+  color: #000;
+  border-color: #fafaf9;
+}
+.nx-google-badge {
+  font-family: var(--nx-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(66,133,244,0.14);
+  color: #4285f4;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

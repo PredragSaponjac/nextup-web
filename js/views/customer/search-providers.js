@@ -26,6 +26,9 @@
   let _abortCtrl = null;
   let _coords = null;       // cached for the duration of this screen
   let _debounceT = null;
+  let _lastResults = [];    // what the API returned last time (unfiltered)
+  let _minRating = 0;       // 0 = all, 4 = 4★+, 4.5 = 4.5★+
+  let _onlyGoogle = false;  // show only providers with google_business_url
 
   window.Views.CustomerSearchProviders = {
     async render() {
@@ -56,6 +59,17 @@
               <p class="nx-search__hint" id="sp-hint">Type at least 2 letters to search.</p>
             </div>
 
+            <div id="sp-filters" style="display:none; padding:4px 0 8px;">
+              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                <button type="button" class="nx-filter-chip is-active" data-rating="0">All \u2605</button>
+                <button type="button" class="nx-filter-chip" data-rating="4">4\u2605+</button>
+                <button type="button" class="nx-filter-chip" data-rating="4.5">4.5\u2605+</button>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--nx-text-muted); cursor:pointer;">
+                <input type="checkbox" id="sp-google-only"> Only providers also on Google
+              </label>
+            </div>
+
             <div id="sp-results" class="nx-search__results"></div>
           </div>
 
@@ -81,16 +95,34 @@
         _abortCtrl = new AbortController();
         const qs = new URLSearchParams({ q });
         if (_coords) { qs.set("lat", _coords.lat); qs.set("lng", _coords.lng); }
-        hint.textContent = "Searching…";
+        hint.textContent = "Searching\u2026";
         results.innerHTML = "";
         try {
           const list = await window.apiFetch(`/api/providers/search?${qs.toString()}`, { signal: _abortCtrl.signal });
-          this._renderList(list || [], q);
+          _lastResults = list || [];
+          this._applyFilters(q);
         } catch (e) {
           if (e.name === "AbortError") return;
           hint.textContent = "Couldn't search: " + (e.message || "network error");
         }
       };
+
+      // Filter chip handlers
+      const filterPanel = document.getElementById("sp-filters");
+      filterPanel.querySelectorAll(".nx-filter-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          filterPanel.querySelectorAll(".nx-filter-chip").forEach(c => c.classList.remove("is-active"));
+          chip.classList.add("is-active");
+          _minRating = parseFloat(chip.dataset.rating) || 0;
+          const q = input.value.trim();
+          if (q.length >= 2) this._applyFilters(q);
+        });
+      });
+      document.getElementById("sp-google-only").addEventListener("change", (e) => {
+        _onlyGoogle = e.target.checked;
+        const q = input.value.trim();
+        if (q.length >= 2) this._applyFilters(q);
+      });
 
       input.addEventListener("input", (e) => {
         const q = e.target.value.trim();
@@ -99,8 +131,10 @@
         if (q.length < 2) {
           results.innerHTML = "";
           hint.textContent = "Type at least 2 letters to search.";
+          document.getElementById("sp-filters").style.display = "none";
           return;
         }
+        document.getElementById("sp-filters").style.display = "";
         _debounceT = setTimeout(() => doSearch(q), 250);
       });
 
@@ -111,6 +145,17 @@
         hint.textContent = "Type at least 2 letters to search.";
         input.focus();
       });
+    },
+
+    _applyFilters(q) {
+      let filtered = _lastResults.slice();
+      if (_minRating > 0) {
+        filtered = filtered.filter(p => Number(p.avg_rating || 0) >= _minRating);
+      }
+      if (_onlyGoogle) {
+        filtered = filtered.filter(p => !!p.google_business_url);
+      }
+      this._renderList(filtered, q);
     },
 
     _renderList(list, q) {
@@ -146,13 +191,19 @@
       const rating = hasReviews
         ? `<span class="nx-respcard__star">★</span> ${Number(p.avg_rating).toFixed(1)} <span style="color:var(--nx-text-muted); font-weight:400;">(${p.total_reviews})</span>`
         : `New`;
+      const googleBadge = p.google_business_url
+        ? `<span class="nx-google-badge" title="Also listed on Google">\u2605 Google</span>`
+        : "";
       const metaParts = [rating];
       if (miles) metaParts.push(`<span>${window.esc(miles)}</span>`);
       if (city) metaParts.push(`<span>${window.esc(city)}</span>`);
-      const meta = metaParts.join(`<span class="nx-respcard__dot">·</span>`);
+      const meta = metaParts.join(`<span class="nx-respcard__dot">\u00b7</span>`);
       return `
         <div class="nx-respcard" data-provider-id="${p.user_id}" style="cursor:pointer;">
-          <h3 class="nx-respcard__name">${window.esc(name)}</h3>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <h3 class="nx-respcard__name">${window.esc(name)}</h3>
+            ${googleBadge}
+          </div>
           <div class="nx-respcard__meta" style="font-size:14px;">${meta}</div>
           <div class="nx-respcard__meta" style="font-size:12px; color:var(--nx-text-muted); padding-top:4px; border-top:1px solid var(--nx-border-soft); margin-top:4px;">
             ${window.esc(cat)}

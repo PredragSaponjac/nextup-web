@@ -139,6 +139,12 @@ window.Views.ProviderProfile = {
                 <input class="nx-auth-input" type="tel" id="e-phone" value="${window.esc((profile && profile.phone) || "")}" placeholder="+1 \u2026">
               </div>
 
+              <div class="nx-form__row">
+                <div class="nx-form__label">Google Business <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
+                <input class="nx-auth-input" type="url" id="e-google-url" value="${window.esc((profile && profile.google_business_url) || "")}" placeholder="https://g.page/your-business">
+                <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">If set, customers see a "View on Google" link on your profile.</div>
+              </div>
+
               <div class="nx-form__row" style="flex-direction:column; align-items:stretch;">
                 ${window.nxLocationPicker ? window.nxLocationPicker.render("edit-loc", { initial: profile || {} }) : `<div>Loading location picker\u2026</div>`}
               </div>
@@ -237,6 +243,7 @@ window.Views.ProviderProfile = {
         lng:     preserve ? (profile && profile.lng)     : loc.lng,
         phone: document.getElementById("e-phone").value.trim() || null,
         services: servicesList,
+        google_business_url: (document.getElementById("e-google-url").value.trim() || null),
       };
       if (!body.business_name) {
         err.textContent = "Business name is required."; err.style.display = "block"; return;
