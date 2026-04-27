@@ -84,6 +84,80 @@ window.Views.ProviderHistory = {
     `;
 
     this._wireRateButtons();
+    this._wireSwipeDelete();
+  },
+
+  _wireSwipeDelete() {
+    const THRESHOLD = 60, OPEN_AT = 90;
+    let current = null, startX = 0, offset = 0, dragged = false;
+    const wraps = document.querySelectorAll(".nx-swipe[data-response-id]");
+
+    const closeAll = (except) => {
+      wraps.forEach(el => {
+        if (el === except) return;
+        el.classList.remove("is-open");
+        const c = el.querySelector(".nx-swipe__card");
+        if (c) c.style.transform = "";
+      });
+    };
+
+    wraps.forEach(wrap => {
+      const card = wrap.querySelector(".nx-swipe__card");
+      const action = wrap.querySelector("[data-delete-response]");
+
+      action.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = action.dataset.deleteResponse;
+        const ok = await window.nxConfirm("Delete this response from history?", { okLabel: "Delete", danger: true });
+        if (!ok) return;
+        try {
+          await window.apiFetch(`/api/responses/${id}`, { method: "DELETE" });
+          window.toast && window.toast("Deleted", "success");
+          await window.Views.ProviderHistory.render();
+        } catch (err) {
+          window.nxAlert("Couldn't delete: " + err.message);
+        }
+      });
+
+      const onDown = (e) => {
+        const t = e.touches ? e.touches[0] : e;
+        current = wrap; startX = t.clientX;
+        offset = wrap.classList.contains("is-open") ? -OPEN_AT : 0;
+        dragged = false;
+        card.style.transition = "none";
+      };
+      const onMove = (e) => {
+        if (current !== wrap) return;
+        const t = e.touches ? e.touches[0] : e;
+        const dx = t.clientX - startX;
+        let next = Math.min(0, offset + dx);
+        if (next < -OPEN_AT - 20) next = -OPEN_AT - 20;
+        card.style.transform = `translateX(${next}px)`;
+        if (Math.abs(dx) > 6) dragged = true;
+      };
+      const onUp = (e) => {
+        if (current !== wrap) return;
+        current = null;
+        card.style.transition = "transform 160ms ease-out";
+        const t = (e.changedTouches && e.changedTouches[0]) || e;
+        const finalOffset = offset + (t.clientX - startX);
+        if (finalOffset < -THRESHOLD) {
+          closeAll(wrap);
+          wrap.classList.add("is-open");
+          card.style.transform = `translateX(-${OPEN_AT}px)`;
+        } else {
+          wrap.classList.remove("is-open");
+          card.style.transform = "";
+        }
+      };
+      card.addEventListener("touchstart", onDown, { passive: true });
+      card.addEventListener("touchmove", onMove, { passive: true });
+      card.addEventListener("touchend", onUp);
+      card.addEventListener("mousedown", onDown);
+      card.addEventListener("mousemove", (e) => { if (current === wrap && e.buttons === 1) onMove(e); });
+      card.addEventListener("mouseup", onUp);
+      card.addEventListener("mouseleave", (e) => { if (current === wrap) onUp(e); });
+    });
   },
 
   _wireRateButtons() {
@@ -129,25 +203,36 @@ window.Views.ProviderHistory = {
       }
     }
 
+    const cardBody = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <h3 class="nx-respcard__name" style="flex:1; margin:0;">${window.esc(r.service_description || "Request")}</h3>
+        ${pill}
+      </div>
+      <div class="nx-respcard__meta" style="font-size:13px; padding-top:4px;">
+        <span>${window.esc(price)}</span>
+        <span class="nx-respcard__dot">\u00b7</span>
+        <span>${window.esc(r.available_time || "")}</span>
+        <span class="nx-respcard__dot">\u00b7</span>
+        <span>${window.esc(cat)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; gap:10px;">
+        <div style="font-size:12px; color:var(--nx-text-muted); flex:1;">
+          ${window.esc(r.customer_name || "Customer")} \u00b7 ${window.esc(when)}
+        </div>
+        ${rateChip}
+      </div>
+    `;
+
+    // Swipe-to-delete only for terminal states (declined / cancelled / expired).
+    // Pending and accepted responses must NOT be deletable.
+    const canDelete = ["declined", "cancelled", "expired"].includes(status);
+    if (!canDelete) {
+      return `<div class="nx-respcard" style="cursor:default; margin-bottom:10px;">${cardBody}</div>`;
+    }
     return `
-      <div class="nx-respcard" style="cursor:default;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <h3 class="nx-respcard__name" style="flex:1; margin:0;">${window.esc(r.service_description || "Request")}</h3>
-          ${pill}
-        </div>
-        <div class="nx-respcard__meta" style="font-size:13px; padding-top:4px;">
-          <span>${window.esc(price)}</span>
-          <span class="nx-respcard__dot">\u00b7</span>
-          <span>${window.esc(r.available_time || "")}</span>
-          <span class="nx-respcard__dot">\u00b7</span>
-          <span>${window.esc(cat)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; gap:10px;">
-          <div style="font-size:12px; color:var(--nx-text-muted); flex:1;">
-            ${window.esc(r.customer_name || "Customer")} \u00b7 ${window.esc(when)}
-          </div>
-          ${rateChip}
-        </div>
+      <div class="nx-swipe" data-response-id="${r.response_id}">
+        <button class="nx-swipe__action" data-delete-response="${r.response_id}" style="background:#3f3f46;">Delete</button>
+        <div class="nx-swipe__card nx-respcard" style="cursor:default;">${cardBody}</div>
       </div>
     `;
   },
