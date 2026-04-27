@@ -175,6 +175,98 @@ window.nxOpenExternal = async function (url) {
   window.location.href = url;
 };
 
+// --------------- Shared swipe-to-hide for messages thread list ---------
+// Used by both customer/messages.js and provider/messages.js. Each thread
+// row is a .nx-swipe with a .nx-swipe__card child and a Hide button behind.
+// Tap card → navigate to thread; swipe-left → reveal Hide; tap Hide → POST
+// /api/messages/{id}/hide → re-render via the view's _renderOnce().
+window.nxBindThreadSwipe = function (view) {
+  const THRESHOLD = 60, OPEN_AT = 90;
+  let current = null, startX = 0, offset = 0, dragged = false;
+  const wraps = document.querySelectorAll(".nx-swipe[data-thread-wrap]");
+
+  const closeAll = (except) => {
+    wraps.forEach(el => {
+      if (el === except) return;
+      el.classList.remove("is-open");
+      const c = el.querySelector(".nx-swipe__card");
+      if (c) c.style.transform = "";
+    });
+  };
+
+  wraps.forEach(wrap => {
+    const card = wrap.querySelector(".nx-swipe__card");
+    const action = wrap.querySelector("[data-hide-thread]");
+    const reqId = card.dataset.thread;
+
+    card.addEventListener("click", (e) => {
+      if (dragged) { dragged = false; return; }
+      if (wrap.classList.contains("is-open")) {
+        e.preventDefault();
+        wrap.classList.remove("is-open");
+        card.style.transform = "";
+        return;
+      }
+      window.navigate(`thread/${reqId}`);
+    });
+
+    action.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const ok = await window.nxConfirm(
+        "Hide this conversation from your inbox?\n\nThe other person still sees the full history. If they reply, the thread comes back.",
+        { okLabel: "Hide", danger: true }
+      );
+      if (!ok) return;
+      try {
+        await window.apiFetch(`/api/messages/${reqId}/hide`, { method: "POST" });
+        window.toast && window.toast("Hidden", "success");
+        if (view && typeof view._renderOnce === "function") await view._renderOnce(true);
+      } catch (err) {
+        window.nxAlert("Couldn't hide: " + err.message);
+      }
+    });
+
+    const onDown = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      current = wrap; startX = t.clientX;
+      offset = wrap.classList.contains("is-open") ? -OPEN_AT : 0;
+      dragged = false;
+      card.style.transition = "none";
+    };
+    const onMove = (e) => {
+      if (current !== wrap) return;
+      const t = e.touches ? e.touches[0] : e;
+      const dx = t.clientX - startX;
+      let next = Math.min(0, offset + dx);
+      if (next < -OPEN_AT - 20) next = -OPEN_AT - 20;
+      card.style.transform = `translateX(${next}px)`;
+      if (Math.abs(dx) > 6) dragged = true;
+    };
+    const onUp = (e) => {
+      if (current !== wrap) return;
+      current = null;
+      card.style.transition = "transform 160ms ease-out";
+      const t = (e.changedTouches && e.changedTouches[0]) || e;
+      const finalOffset = offset + (t.clientX - startX);
+      if (finalOffset < -THRESHOLD) {
+        closeAll(wrap);
+        wrap.classList.add("is-open");
+        card.style.transform = `translateX(-${OPEN_AT}px)`;
+      } else {
+        wrap.classList.remove("is-open");
+        card.style.transform = "";
+      }
+    };
+    card.addEventListener("touchstart", onDown, { passive: true });
+    card.addEventListener("touchmove", onMove, { passive: true });
+    card.addEventListener("touchend", onUp);
+    card.addEventListener("mousedown", onDown);
+    card.addEventListener("mousemove", (e) => { if (current === wrap && e.buttons === 1) onMove(e); });
+    card.addEventListener("mouseup", onUp);
+    card.addEventListener("mouseleave", (e) => { if (current === wrap) onUp(e); });
+  });
+};
+
 // --------------- Show a toast message ---------------
 window.toast = function (message, type) {
   const existing = document.getElementById("toast");

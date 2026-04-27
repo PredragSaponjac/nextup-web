@@ -42,10 +42,8 @@ window.Views.ProviderMessages = {
       </div>
     `);
 
-    document.querySelectorAll("[data-thread]").forEach(el => {
-      el.addEventListener("click", () => window.navigate(`thread/${el.dataset.thread}`));
-    });
     window.bindProviderTabBar();
+    window.nxBindThreadSwipe(this);
   },
 
   _renderRow(t) {
@@ -57,14 +55,17 @@ window.Views.ProviderMessages = {
       ? `<span style="display:inline-block; background:#fafaf9; color:#111; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:500; margin-left:8px;">${unread}</span>`
       : "";
     return `
-      <div class="nx-respcard" data-thread="${t.request_id}" style="cursor:pointer;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <h3 class="nx-respcard__name" style="flex:1; margin:0;">${window.esc(name)}${badge}</h3>
-          <span style="font-size:12px; color:var(--nx-text-muted); white-space:nowrap;">${window.esc(ago)}</span>
-        </div>
-        ${t.service_description ? `<div style="font-size:12px; color:var(--nx-text-muted); padding:4px 0;">${window.esc(t.service_description)}</div>` : ""}
-        <div style="font-size:13px; color:${unread > 0 ? "var(--nx-text)" : "var(--nx-text-muted)"}; padding-top:4px;">
-          ${window.esc(preview) || "—"}
+      <div class="nx-swipe" data-thread-wrap="${t.request_id}">
+        <button class="nx-swipe__action" data-hide-thread="${t.request_id}" style="background:#3f3f46;">Hide</button>
+        <div class="nx-swipe__card nx-respcard" data-thread="${t.request_id}" style="cursor:pointer;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <h3 class="nx-respcard__name" style="flex:1; margin:0;">${window.esc(name)}${badge}</h3>
+            <span style="font-size:12px; color:var(--nx-text-muted); white-space:nowrap;">${window.esc(ago)}</span>
+          </div>
+          ${t.service_description ? `<div style="font-size:12px; color:var(--nx-text-muted); padding:4px 0;">${window.esc(t.service_description)}</div>` : ""}
+          <div style="font-size:13px; color:${unread > 0 ? "var(--nx-text)" : "var(--nx-text-muted)"}; padding-top:4px;">
+            ${window.esc(preview) || "—"}
+          </div>
         </div>
       </div>
     `;
