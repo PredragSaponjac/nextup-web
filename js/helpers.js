@@ -267,6 +267,98 @@ window.nxBindThreadSwipe = function (view) {
   });
 };
 
+// --------------- Delete-account flow (shared by customer + provider) ----
+// Apple App Store guideline 5.1.1(v) requires every app that creates
+// accounts to also let the user delete them in-app. This drives the full
+// flow: explicit warning → password re-confirmation → DELETE
+// /api/auth/account → clear local session → bounce to role-select.
+window.nxDeleteAccountFlow = async function () {
+  const ok = await window.nxConfirm(
+    "Delete your NextUp account?\n\nThis permanently removes your profile, requests, responses, messages, reviews and any active subscription. It can't be undone.",
+    { okLabel: "Continue", cancelLabel: "Keep account", danger: true }
+  );
+  if (!ok) return;
+
+  const password = await window.nxPrompt(
+    "Confirm with your password to permanently delete your account.",
+    { okLabel: "Delete forever", placeholder: "Password", type: "password", danger: true }
+  );
+  if (password == null) return;          // user cancelled
+  if (!password) {
+    window.nxAlert("Password is required to delete the account.");
+    return;
+  }
+
+  try {
+    await window.apiFetch("/api/auth/account", {
+      method: "DELETE",
+      body: { password },
+    });
+  } catch (err) {
+    const msg = (err && err.message) || "Delete failed";
+    window.nxAlert("Couldn't delete account: " + msg);
+    return;
+  }
+
+  // Clean local state regardless of what the server returns next.
+  try { window.clearSession && window.clearSession(); } catch (_) {}
+  window.toast && window.toast("Account deleted", "success");
+  window.navigate("role-select");
+};
+
+// --------------- Single-input prompt modal (WebView-safe) ---------------
+// window.prompt() is silently suppressed inside iOS WKWebView (returns null
+// without ever showing a UI). We render an in-DOM modal that returns
+// Promise<string|null> — null means user cancelled, "" means submitted blank.
+window.nxPrompt = function (message, opts) {
+  opts = opts || {};
+  const okLabel = opts.okLabel || "OK";
+  const cancelLabel = opts.cancelLabel || "Cancel";
+  const placeholder = opts.placeholder || "";
+  const inputType = opts.type || "text";
+  const danger = !!opts.danger;
+  return new Promise((resolve) => {
+    const existing = document.getElementById("nx-modal");
+    if (existing) existing.remove();
+    const overlay = document.createElement("div");
+    overlay.id = "nx-modal";
+    overlay.style.cssText =
+      "position:fixed; inset:0; z-index:10000; display:flex; align-items:center; " +
+      "justify-content:center; padding:24px; background:rgba(0,0,0,0.66); " +
+      "backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);";
+    const safeMsg = window.esc(message).replace(/\n/g, "<br>");
+    overlay.innerHTML =
+      '<div role="dialog" aria-modal="true" style="max-width:360px; width:100%; ' +
+      'background:#141414; border:1px solid #2a2a2a; border-radius:16px; ' +
+      'padding:22px; color:#fafaf9; font-family:var(--nx-font-sans,system-ui);">' +
+      '<div style="font-size:15px; line-height:1.5; padding:4px 0 14px;">' + safeMsg + '</div>' +
+      '<input id="nx-modal-input" type="' + window.esc(inputType) + '" ' +
+      'placeholder="' + window.esc(placeholder) + '" autocomplete="current-password" ' +
+      'style="width:100%; padding:12px; margin-bottom:14px; border-radius:10px; ' +
+      'border:1px solid #2a2a2a; background:#0b0b0b; color:#fafaf9; ' +
+      'font-size:15px; box-sizing:border-box;">' +
+      '<div style="display:flex; gap:10px;">' +
+      '<button id="nx-modal-cancel" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:1px solid #2a2a2a; background:transparent; color:#fafaf9; ' +
+      'font-size:15px;">' + window.esc(cancelLabel) + '</button>' +
+      '<button id="nx-modal-ok" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:0; background:' + (danger ? '#ef4444' : '#22c55e') + '; color:#000; ' +
+      'font-weight:600; font-size:15px;">' + window.esc(okLabel) + '</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector("#nx-modal-input");
+    setTimeout(() => { try { input.focus(); } catch (_) {} }, 50);
+    const cleanup = (result) => { overlay.remove(); resolve(result); };
+    overlay.querySelector("#nx-modal-ok").addEventListener("click", () => cleanup(input.value));
+    overlay.querySelector("#nx-modal-cancel").addEventListener("click", () => cleanup(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") cleanup(input.value);
+      else if (e.key === "Escape") cleanup(null);
+    });
+  });
+};
+
 // --------------- Show a toast message ---------------
 window.toast = function (message, type) {
   const existing = document.getElementById("toast");

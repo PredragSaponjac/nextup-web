@@ -72,6 +72,14 @@ window.Views.CustomerProfile = {
           </div>
 
           <button class="nx-cta" id="sign-out-btn" style="margin-top:24px;">Sign out</button>
+
+          <button class="nx-cta" id="delete-account-btn"
+            style="margin-top:12px; background:transparent; border:1px solid #ef4444; color:#ef4444;">
+            Delete account
+          </button>
+          <div style="font-size:11px; color:var(--nx-text-muted); text-align:center; padding:8px 0 4px;">
+            Permanently removes your profile, requests and messages. This can't be undone.
+          </div>
         </div>
 
         ${window.customerTabBar("profile")}
@@ -117,6 +125,10 @@ window.Views.CustomerProfile = {
       if (!(await window.nxConfirm("Sign out?", { okLabel: "Sign out", danger: true }))) return;
       window.clearSession();
       window.navigate("role-select");
+    });
+
+    document.getElementById("delete-account-btn").addEventListener("click", async () => {
+      await window.nxDeleteAccountFlow();
     });
 
     window.bindCustomerTabBar();

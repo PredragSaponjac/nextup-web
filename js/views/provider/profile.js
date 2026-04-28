@@ -155,6 +155,14 @@ window.Views.ProviderProfile = {
           </div>
 
           <button class="nx-cta" id="sign-out-btn" style="margin-top:24px; background:transparent; border:1px solid var(--nx-border-soft); color:var(--nx-text-muted);">Sign out</button>
+
+          <button class="nx-cta" id="delete-account-btn"
+            style="margin-top:12px; background:transparent; border:1px solid #ef4444; color:#ef4444;">
+            Delete account
+          </button>
+          <div style="font-size:11px; color:var(--nx-text-muted); text-align:center; padding:8px 0 4px;">
+            Permanently removes your business profile, history and messages. Cancels your subscription. This can't be undone.
+          </div>
         </div>
         ${window.providerTabBar("profile")}
       </div>
@@ -438,6 +446,10 @@ window.Views.ProviderProfile = {
       if (!(await window.nxConfirm("Sign out of NextUp?", { okLabel: "Sign out", danger: true }))) return;
       window.clearSession();
       window.navigate("role-select");
+    });
+
+    document.getElementById("delete-account-btn").addEventListener("click", async () => {
+      await window.nxDeleteAccountFlow();
     });
 
     window.bindProviderTabBar();
