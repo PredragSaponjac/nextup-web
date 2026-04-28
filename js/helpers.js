@@ -310,6 +310,11 @@ window.nxDeleteAccountFlow = async function () {
 // window.prompt() is silently suppressed inside iOS WKWebView (returns null
 // without ever showing a UI). We render an in-DOM modal that returns
 // Promise<string|null> — null means user cancelled, "" means submitted blank.
+//
+// For type:"password" we DELIBERATELY suppress browser/keychain autofill so
+// users can't get tripped up by a stale saved password being silently
+// pasted into a destructive flow (e.g. delete-account). An eye toggle lets
+// them visually confirm what they typed before submitting.
 window.nxPrompt = function (message, opts) {
   opts = opts || {};
   const okLabel = opts.okLabel || "OK";
@@ -317,6 +322,7 @@ window.nxPrompt = function (message, opts) {
   const placeholder = opts.placeholder || "";
   const inputType = opts.type || "text";
   const danger = !!opts.danger;
+  const isPassword = inputType === "password";
   return new Promise((resolve) => {
     const existing = document.getElementById("nx-modal");
     if (existing) existing.remove();
@@ -327,16 +333,39 @@ window.nxPrompt = function (message, opts) {
       "justify-content:center; padding:24px; background:rgba(0,0,0,0.66); " +
       "backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);";
     const safeMsg = window.esc(message).replace(/\n/g, "<br>");
+    // Disable autofill aggressively: autocomplete=off + LastPass / 1Password
+    // hints + data-form-type=other. Some browsers still ignore these (Safari
+    // is notorious), so the eye toggle below is the real safety net.
+    const autofillAttrs =
+      'autocomplete="off" autocapitalize="off" autocorrect="off" ' +
+      'spellcheck="false" data-form-type="other" data-lpignore="true" ' +
+      'data-1p-ignore="true"';
+    const inputWrap = isPassword
+      ? ('<div style="position:relative; margin-bottom:14px;">' +
+         '<input id="nx-modal-input" type="password" ' + autofillAttrs +
+         ' placeholder="' + window.esc(placeholder) + '" ' +
+         'style="width:100%; padding:12px 44px 12px 12px; border-radius:10px; ' +
+         'border:1px solid #2a2a2a; background:#0b0b0b; color:#fafaf9; ' +
+         'font-size:15px; box-sizing:border-box;">' +
+         '<button type="button" id="nx-modal-eye" aria-label="Show password" ' +
+         'style="position:absolute; right:8px; top:50%; transform:translateY(-50%); ' +
+         'width:34px; height:34px; border:0; background:transparent; ' +
+         'color:#fafaf9; font-size:18px; cursor:pointer; padding:0;">👁</button>' +
+         '</div>')
+      : ('<input id="nx-modal-input" type="' + window.esc(inputType) + '" ' +
+         autofillAttrs + ' placeholder="' + window.esc(placeholder) + '" ' +
+         'style="width:100%; padding:12px; margin-bottom:14px; border-radius:10px; ' +
+         'border:1px solid #2a2a2a; background:#0b0b0b; color:#fafaf9; ' +
+         'font-size:15px; box-sizing:border-box;">');
     overlay.innerHTML =
       '<div role="dialog" aria-modal="true" style="max-width:360px; width:100%; ' +
       'background:#141414; border:1px solid #2a2a2a; border-radius:16px; ' +
       'padding:22px; color:#fafaf9; font-family:var(--nx-font-sans,system-ui);">' +
       '<div style="font-size:15px; line-height:1.5; padding:4px 0 14px;">' + safeMsg + '</div>' +
-      '<input id="nx-modal-input" type="' + window.esc(inputType) + '" ' +
-      'placeholder="' + window.esc(placeholder) + '" autocomplete="current-password" ' +
-      'style="width:100%; padding:12px; margin-bottom:14px; border-radius:10px; ' +
-      'border:1px solid #2a2a2a; background:#0b0b0b; color:#fafaf9; ' +
-      'font-size:15px; box-sizing:border-box;">' +
+      // Wrap the input in a hidden dummy form to further discourage
+      // password-manager autofill (some only fill into <form> children
+      // with autocomplete=on; leaving them out neutralizes the heuristic).
+      inputWrap +
       '<div style="display:flex; gap:10px;">' +
       '<button id="nx-modal-cancel" style="flex:1; padding:12px; border-radius:10px; ' +
       'border:1px solid #2a2a2a; background:transparent; color:#fafaf9; ' +
@@ -347,7 +376,25 @@ window.nxPrompt = function (message, opts) {
       '</div></div>';
     document.body.appendChild(overlay);
     const input = overlay.querySelector("#nx-modal-input");
-    setTimeout(() => { try { input.focus(); } catch (_) {} }, 50);
+    // Force-clear any value the browser may have prefilled before paint.
+    setTimeout(() => {
+      try {
+        input.value = "";
+        input.focus();
+      } catch (_) {}
+    }, 50);
+    // Eye toggle for password fields
+    const eye = overlay.querySelector("#nx-modal-eye");
+    if (eye) {
+      eye.addEventListener("click", (e) => {
+        e.preventDefault();
+        const showing = input.type === "text";
+        input.type = showing ? "password" : "text";
+        eye.textContent = showing ? "👁" : "🙈";
+        eye.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+        try { input.focus(); } catch (_) {}
+      });
+    }
     const cleanup = (result) => { overlay.remove(); resolve(result); };
     overlay.querySelector("#nx-modal-ok").addEventListener("click", () => cleanup(input.value));
     overlay.querySelector("#nx-modal-cancel").addEventListener("click", () => cleanup(null));
