@@ -141,6 +141,26 @@ const SERVICES_TAXONOMY = {
           "Reflexology",
           "Sound Bath / Healing"
         ]
+      },
+      // 18+ specialty wellness sub-section. Hidden from the picker
+      // unless the user has opted in via Profile -> "Show 18+ wellness
+      // services". Service-type compartmentalization: customers
+      // browsing regular Spa & Wellness never see these specialty
+      // services unless they've explicitly enabled them, and providers
+      // also opt in (offers_adult) to receive these requests. Two
+      // locked doors keep regular and specialty flows from
+      // cross-matching.
+      wellness_18plus: {
+        label: "Wellness 18+ (separate)",
+        is_adult: true,
+        services: [
+          "Tantric Massage (18+)",
+          "Sensual Wellness Massage (18+)",
+          "Couples Intimacy Massage (18+)",
+          "Intimacy Coaching (18+)",
+          "Body-work Wellness Session (18+)",
+          "Companionship — non-sexual (18+)"
+        ]
       }
     }
   },
@@ -744,41 +764,6 @@ const SERVICES_TAXONOMY = {
           "Shoe Cleaning & Restoration",
           "Leather Repair / Conditioning",
           "Handbag / Purse Repair"
-        ]
-      }
-    }
-  },
-
-  // 18+ Adult Wellness — hidden from the Home grid unless the customer has
-  // opted in via Profile → "Show Adult Wellness". Apple-safe naming + scope:
-  // licensed massage / tantric / sensual wellness / intimacy coaching only.
-  // Anonymous-by-default at broadcast time; provider must opt-in to receive.
-  adult_wellness: {
-    label: "Adult Wellness",
-    is_adult: true,
-    subcategories: {
-      massage: {
-        label: "Massage Therapy (Adult)",
-        services: [
-          "Licensed / CMT Massage Therapy",
-          "Tantric Massage",
-          "Sensual Wellness Massage",
-          "Couples / Partner Massage"
-        ]
-      },
-      coaching: {
-        label: "Wellness Coaching",
-        services: [
-          "Intimacy Coaching",
-          "Body-work Wellness Session",
-          "Relationship Coaching"
-        ]
-      },
-      companionship: {
-        label: "Companionship",
-        services: [
-          "Non-sexual Companionship",
-          "Event Companion"
         ]
       }
     }

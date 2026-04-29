@@ -89,26 +89,19 @@ window.Views.CustomerHome = {
     const hasProvider = !!(window.state.currentUser && window.state.currentUser.has_provider_profile);
     const modeCTA = hasProvider ? "I'm a provider ›" : "Become a provider ›";
 
-    // Hide adult_wellness unless the customer has opted in via Profile.
-    const adultOptIn = !!(window.state.currentUser && window.state.currentUser.adult_optin);
-    const catKeys = Object.keys(window.SERVICES_TAXONOMY || {}).filter(key => {
-      const cat = window.SERVICES_TAXONOMY[key];
-      if (cat && cat.is_adult && !adultOptIn) return false;
-      return true;
-    });
+    // 18+ services live as a SUB-section under Spa & Wellness, never as a
+    // separate top-level tile. Customers who haven't opted in (Profile ->
+    // "Show 18+ wellness services") simply don't see those sub-services
+    // in the picker on the spa_wellness broadcast form. The home grid
+    // stays clean — no adult-flavored tile to confuse a casual user.
+    const catKeys = Object.keys(window.SERVICES_TAXONOMY || {});
     const tiles = catKeys.map(key => {
       const cat = window.SERVICES_TAXONOMY[key];
       const iconFn = NX_CATEGORY_ICONS[key] || nxIconScissors;
-      // Anonymous-by-default badge on adult tile to surface the privacy promise
-      // BEFORE the user taps in (per the design — early visibility beats late).
-      const anonBadge = (cat && cat.is_adult)
-        ? `<span class="nx-cat__badge" aria-label="Anonymous by default">🔒 Anonymous</span>`
-        : "";
       return `
         <button class="nx-cat" data-cat="${key}">
           ${iconFn()}
           <span class="nx-cat__label">${window.esc(cat.label)}</span>
-          ${anonBadge}
         </button>
       `;
     }).join("");

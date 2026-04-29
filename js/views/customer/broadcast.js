@@ -12,16 +12,37 @@ function nxCategoryLabel(catKey) {
 }
 
 /** Flatten all services in a category into a single array. Each entry carries
- *  the subcategory key so we can filter providers accordingly at broadcast time. */
-function nxServicesForCategory(catKey) {
+ *  the subcategory key so we can filter providers accordingly at broadcast time.
+ *
+ *  18+ services live in subcategories flagged with `is_adult: true` (e.g.
+ *  spa_wellness.wellness_18plus). They are filtered OUT of the returned list
+ *  unless `includeAdult=true` (set when the user has opted in via Profile).
+ *  Separation principle: a user who wanted a regular massage must NEVER end
+ *  up matched with an 18+ provider by accident. The opt-in is the gate.
+ */
+function nxServicesForCategory(catKey, opts) {
+  const includeAdult = !!(opts && opts.includeAdult);
   const tax = window.SERVICES_TAXONOMY || {};
   const cat = tax[catKey];
   if (!cat || !cat.subcategories) return ["General Service"];
   const list = [];
   Object.entries(cat.subcategories).forEach(([subKey, sub]) => {
+    if (sub.is_adult && !includeAdult) return;     // skip 18+ subcategory
     (sub.services || []).forEach(s => list.push(s));
   });
   return list.length ? list : ["General Service"];
+}
+
+/** Returns true if `serviceLabel` belongs to an 18+ subcategory of `catKey`.
+ *  Used to flag the request as is_adult on submit and to default the
+ *  anonymous toggle ON for 18+ services. */
+function nxServiceIsAdult(catKey, serviceLabel) {
+  const cat = (window.SERVICES_TAXONOMY || {})[catKey];
+  if (!cat || !cat.subcategories) return false;
+  for (const sub of Object.values(cat.subcategories)) {
+    if (sub.is_adult && (sub.services || []).includes(serviceLabel)) return true;
+  }
+  return false;
 }
 
 /** Reverse lookup: given a service label + category, return the subcategory key.
@@ -62,14 +83,17 @@ window.Views.CustomerBroadcast = {
     const catKey = (params && params[0]) || "beauty";
     const targetProviderId = (params && params[1]) ? parseInt(params[1], 10) : null;
     const catLabel = nxCategoryLabel(catKey);
-    let services = nxServicesForCategory(catKey);
+    // Only include 18+ sub-services if the user has explicitly opted in.
+    const includeAdult = !!(window.state.currentUser && window.state.currentUser.adult_optin);
+    let services = nxServicesForCategory(catKey, { includeAdult });
 
-    // Default anonymous ON for adult_wellness, OFF for everything else.
-    const tax = window.SERVICES_TAXONOMY || {};
-    const isAdult = !!(tax[catKey] && tax[catKey].is_adult);
+    // is_adult is per-SERVICE now (lives in a wellness_18plus subcategory),
+    // not per-category. We re-derive it on every service change below.
+    const initialService = services[0];
+    const isAdult = nxServiceIsAdult(catKey, initialService);
     FORM_STATE = {
       catKey,
-      service: services[0],
+      service: initialService,
       timeframeKey: "within_1h",
       timeLabel: "As soon as possible",
       scheduledAt: null,  // Date, if user picked a specific future date/time
@@ -80,7 +104,7 @@ window.Views.CustomerBroadcast = {
       targetProviderId,
       targetProviderName: null,     // resolved below if targetProviderId is set
       isAdult,
-      isAnonymous: isAdult,         // adult: anon by default, others: off
+      isAnonymous: isAdult,         // 18+ services: anon by default; others: off
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -127,13 +151,10 @@ window.Views.CustomerBroadcast = {
 
           ${targetBanner}
 
-          ${FORM_STATE.isAdult && !localStorage.getItem("nx_seen_adult_anon_card") ? `
-            <div id="adult-info-card" style="margin:12px 0; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; color:#fafaf9; font-size:13px; line-height:1.5;">
-              <div style="font-weight:600; margin-bottom:6px;">🔒 Anonymous by default</div>
-              <div style="color:var(--nx-text-muted);">Adult Wellness requests hide your name from providers. Your name stays private throughout the booking. You can change this on the form below.</div>
-              <button type="button" id="dismiss-adult-card" style="margin-top:10px; background:transparent; border:0; color:#22c55e; font-size:13px; padding:0; cursor:pointer;">Got it</button>
-            </div>
-          ` : ""}
+          <div id="adult-separation-warn" style="display:${FORM_STATE.isAdult ? "block" : "none"}; margin:12px 0; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; color:#fafaf9; font-size:13px; line-height:1.5;">
+            <div style="font-weight:600; margin-bottom:6px;">🔒 Specialty 18+ service · Anonymous by default</div>
+            <div style="color:var(--nx-text-muted);">This request only goes to providers who specifically offer 18+ wellness services. Your name is hidden by default — toggle below if you want to share it.</div>
+          </div>
 
           <div class="nx-form">
             <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
@@ -183,17 +204,8 @@ window.Views.CustomerBroadcast = {
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.length > 1 ? window.history.back() : window.navigate("home"));
 
-    // Adult anon info card — dismiss + remember (one-time per device)
-    const dismissCard = document.getElementById("dismiss-adult-card");
-    if (dismissCard) {
-      dismissCard.addEventListener("click", () => {
-        try { localStorage.setItem("nx_seen_adult_anon_card", "1"); } catch (_) {}
-        const card = document.getElementById("adult-info-card");
-        if (card) card.style.display = "none";
-      });
-    }
-
-    // Anonymous toggle row — pre-set per category, always editable
+    // Anonymous toggle row — pre-set per service (ON for 18+ specialty,
+    // OFF for regular), always editable
     document.getElementById("row-anon").addEventListener("click", () => {
       FORM_STATE.isAnonymous = !FORM_STATE.isAnonymous;
       const val = document.getElementById("val-anon");
@@ -216,6 +228,28 @@ window.Views.CustomerBroadcast = {
       if (picked == null) return;
       FORM_STATE.service = picked;
       document.getElementById("val-service").textContent = picked;
+      // Re-derive adult/anon flags when the picked service changes. 18+
+      // services live in a wellness_18plus subcategory and default the
+      // anon toggle to ON; switching back to a regular service flips it
+      // back to OFF unless the user has manually toggled it.
+      const wasAdult = FORM_STATE.isAdult;
+      FORM_STATE.isAdult = nxServiceIsAdult(FORM_STATE.catKey, picked);
+      if (FORM_STATE.isAdult !== wasAdult) {
+        FORM_STATE.isAnonymous = FORM_STATE.isAdult;
+        const valAnon = document.getElementById("val-anon");
+        const chevAnon = document.querySelector("#row-anon .nx-form__chev");
+        if (valAnon && chevAnon) {
+          const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
+          valAnon.textContent = FORM_STATE.isAnonymous
+            ? `On — providers see ‘Customer #${uid}’`
+            : "Off — providers see your name";
+          chevAnon.textContent = FORM_STATE.isAnonymous ? "●" : "○";
+          chevAnon.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
+        }
+        // Toggle the 18+ separation warning
+        const warn = document.getElementById("adult-separation-warn");
+        if (warn) warn.style.display = FORM_STATE.isAdult ? "block" : "none";
+      }
     });
 
     // Time picker — bottom sheet with fine-grained presets + "pick date/time" option
