@@ -44,6 +44,13 @@ window.Views.ChangePassword = {
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.back());
 
+    // Eye toggles on all three password fields so users can verify before submit
+    if (window.nxAttachEye) {
+      window.nxAttachEye("cp-current");
+      window.nxAttachEye("cp-new");
+      window.nxAttachEye("cp-confirm");
+    }
+
     const form = document.getElementById("cp-form");
     const err = document.getElementById("cp-err");
     const btn = document.getElementById("cp-submit");

@@ -42,6 +42,7 @@ window.Views.Auth = {
     `);
 
     document.getElementById("back-btn").addEventListener("click", () => window.navigate("role-select"));
+    window.nxAttachEye && window.nxAttachEye("login-password");
     document.getElementById("go-register").addEventListener("click", () => {
       window.persistPendingRole("customer");
       window.navigate("register");
@@ -170,6 +171,7 @@ window.Views.Auth = {
 
     document.getElementById("back-btn").addEventListener("click", () => window.navigate("role-select"));
     document.getElementById("go-login").addEventListener("click", () => window.navigate("login"));
+    window.nxAttachEye && window.nxAttachEye("reg-password");
 
     // Location picker (provider only) — wire radio/panel + GPS button listeners
     if (isProvider && window.nxLocationPicker) {

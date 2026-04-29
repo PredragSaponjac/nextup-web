@@ -267,6 +267,60 @@ window.nxBindThreadSwipe = function (view) {
   });
 };
 
+// --------------- Attach a show/hide eye toggle to a password input ------
+// Wraps the existing <input type="password" id="..."> in a relative div
+// and overlays a 👁 / 🙈 button on the right edge. Tapping the eye flips
+// the input type between password and text so the user can verify what
+// they typed. Idempotent — calling twice on the same id is a no-op.
+//
+// Apply by id, after the form is mounted, e.g.:
+//     window.nxAttachEye("rp-pass");
+//     window.nxAttachEye("cp-current");
+window.nxAttachEye = function (inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.dataset.nxEyeAttached === "1") return;   // already wrapped
+  input.dataset.nxEyeAttached = "1";
+
+  // Make room on the right edge for the icon so the dots/text don't run
+  // under it. Use padding-right so the input's own border + bg stay.
+  const existingPad = input.style.paddingRight;
+  if (!existingPad || parseInt(existingPad, 10) < 44) {
+    input.style.paddingRight = "44px";
+  }
+
+  // Wrap the input in a position:relative container if it isn't already
+  const parent = input.parentElement;
+  let wrap = input.previousElementSibling && input.previousElementSibling.classList && input.previousElementSibling.classList.contains("nx-eye-wrap")
+    ? input.previousElementSibling : null;
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.className = "nx-eye-wrap";
+    wrap.style.cssText = "position:relative; width:100%;";
+    parent.insertBefore(wrap, input);
+    wrap.appendChild(input);
+  }
+
+  const eye = document.createElement("button");
+  eye.type = "button";
+  eye.setAttribute("aria-label", "Show password");
+  eye.textContent = "👁";
+  eye.style.cssText =
+    "position:absolute; right:6px; top:50%; transform:translateY(-50%); " +
+    "width:34px; height:34px; border:0; background:transparent; " +
+    "color:#fafaf9; font-size:18px; cursor:pointer; padding:0; line-height:1;";
+  wrap.appendChild(eye);
+
+  eye.addEventListener("click", (e) => {
+    e.preventDefault();
+    const showing = input.type === "text";
+    input.type = showing ? "password" : "text";
+    eye.textContent = showing ? "👁" : "🙈";
+    eye.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    try { input.focus(); } catch (_) {}
+  });
+};
+
 // --------------- Delete-account flow (shared by customer + provider) ----
 // Apple App Store guideline 5.1.1(v) requires every app that creates
 // accounts to also let the user delete them in-app. This drives the full

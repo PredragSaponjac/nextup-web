@@ -115,6 +115,9 @@ window.Views.AuthForgot = {
       </div>
     `);
 
+    // Eye toggle so the user can verify what they typed before submitting
+    window.nxAttachEye && window.nxAttachEye("rp-pass");
+
     document.getElementById("back-btn").addEventListener("click", () => this._renderStep1(email));
     document.getElementById("wrong-email").addEventListener("click", () => this._renderStep1(email));
 
