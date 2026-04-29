@@ -59,11 +59,6 @@ function nxIconShirt() {
   // laundry — t-shirt
   return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M14 8l-8 4 4 8 4-2v18h16V18l4 2 4-8-8-4-4 4h-8z"/></svg>`;
 }
-function nxIconRose() {
-  // adult_wellness — minimalist rose
-  return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M22 8c-5 0-9 4-9 9 0 4 3 7 7 8v3c-4 1-9 4-9 8h22c0-4-5-7-9-8v-3c4-1 7-4 7-8 0-5-4-9-9-9z"/><path d="M22 14c-2 0-4 1-4 3"/></svg>`;
-}
-
 // Map backend-category key → icon fn + display label
 const NX_CATEGORY_ICONS = {
   beauty:         nxIconScissors,
@@ -80,7 +75,6 @@ const NX_CATEGORY_ICONS = {
   tech:           nxIconWifi,
   events:         nxIconMusic,
   laundry:        nxIconShirt,
-  adult_wellness: nxIconRose,
 };
 
 window.Views.CustomerHome = {
@@ -89,11 +83,11 @@ window.Views.CustomerHome = {
     const hasProvider = !!(window.state.currentUser && window.state.currentUser.has_provider_profile);
     const modeCTA = hasProvider ? "I'm a provider ›" : "Become a provider ›";
 
-    // 18+ services live as a SUB-section under Spa & Wellness, never as a
-    // separate top-level tile. Customers who haven't opted in (Profile ->
-    // "Show 18+ wellness services") simply don't see those sub-services
-    // in the picker on the spa_wellness broadcast form. The home grid
-    // stays clean — no adult-flavored tile to confuse a casual user.
+    // Render every category in SERVICES_TAXONOMY as a tile. Specialty
+    // services live as additional sub-services within an existing
+    // category's picker (e.g. spa_wellness includes Therapeutic Touch,
+    // Personal Companion, Couples Bodywork) — there's no separate
+    // "specialty" tile on the home grid, so the surface stays clean.
     const catKeys = Object.keys(window.SERVICES_TAXONOMY || {});
     const tiles = catKeys.map(key => {
       const cat = window.SERVICES_TAXONOMY[key];
