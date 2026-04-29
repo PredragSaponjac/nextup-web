@@ -121,6 +121,13 @@ window.Views.Auth = {
               <input class="nx-auth-input" type="text" id="reg-name" required autocomplete="name" placeholder="Your name">
             </div>
             <div class="nx-form__row">
+              <div class="nx-form__label">Nickname <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
+              <input class="nx-auth-input" type="text" id="reg-nickname" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="e.g. Alex, S.K., Houston Customer">
+              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">
+                Used instead of your full name when you broadcast anonymously. Can be set or changed later in Profile.
+              </div>
+            </div>
+            <div class="nx-form__row">
               <div class="nx-form__label">Email</div>
               <input class="nx-auth-input" type="email" id="reg-email" required autocomplete="email" inputmode="email" placeholder="you@example.com">
             </div>
@@ -294,6 +301,7 @@ window.Views.Auth = {
       }
 
       btn.disabled = true; btn.textContent = "Creating…";
+      const nicknameAtSignup = (document.getElementById("reg-nickname").value || "").trim().slice(0, 30);
       try {
         const data = await window.apiRegister({
           full_name: document.getElementById("reg-name").value.trim(),
@@ -305,6 +313,17 @@ window.Views.Auth = {
         window.persistToken(data.access_token);
         window.persistRole(isProvider ? "provider" : "customer");
         window.persistPendingRole(null);
+        // Save the chosen nickname (if any) before fetching /me — that
+        // way the persistUser() call below already includes it. Best
+        // effort — failure here doesn't block account creation.
+        if (nicknameAtSignup) {
+          try {
+            await window.apiFetch("/api/auth/nickname", {
+              method: "POST",
+              body: { nickname: nicknameAtSignup },
+            });
+          } catch (_) { /* user can set later in Profile */ }
+        }
         const me = await window.apiMe();
         window.persistUser(me);
         window.state.biometricUnlocked = true;
