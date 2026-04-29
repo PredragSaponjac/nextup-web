@@ -55,6 +55,14 @@ window.Views.CustomerProfile = {
               </div>
             ` : ``}
 
+            <div class="nx-form__row" id="row-nickname" style="cursor:pointer;">
+              <div class="nx-form__label">Nickname</div>
+              <div class="nx-form__value">
+                <span id="val-nickname">${u.nickname ? window.esc(u.nickname) : "Not set"}</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" id="row-change-password" style="cursor:pointer;">
               <div class="nx-form__label">Password</div>
               <div class="nx-form__value">
@@ -119,6 +127,32 @@ window.Views.CustomerProfile = {
 
     document.getElementById("row-change-password").addEventListener("click", () => {
       window.navigate("change-password");
+    });
+
+    // Nickname — optional display name used as the auto-fallback for
+    // anonymous broadcasts and visible across the app instead of the
+    // user's full legal name when they want extra privacy.
+    document.getElementById("row-nickname").addEventListener("click", async () => {
+      const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
+      const next = await window.nxPrompt(
+        "Pick a nickname (e.g. Alex, S.K., Houston Customer).\n\nProviders will see this instead of your full name when you broadcast anonymously. Leave blank to clear.",
+        { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
+      );
+      if (next == null) return;             // user cancelled
+      const trimmed = (next || "").trim().slice(0, 30);
+      if (trimmed === cur) return;          // no change
+      try {
+        const res = await window.apiFetch("/api/auth/nickname", {
+          method: "POST",
+          body: { nickname: trimmed || null },
+        });
+        const u2 = await window.apiMe();
+        window.persistUser(u2);
+        window.Views.CustomerProfile.render();
+        window.toast && window.toast(res.nickname ? "Nickname saved" : "Nickname cleared", "success");
+      } catch (err) {
+        window.nxAlert("Couldn't save: " + (err.message || err));
+      }
     });
 
     document.getElementById("sign-out-btn").addEventListener("click", async () => {

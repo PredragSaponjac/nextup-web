@@ -91,6 +91,12 @@ window.Views.CustomerBroadcast = {
       // services (see NX_ANON_DEFAULT_SERVICES); OFF for everything else.
       // Always editable on the form — this just sets the initial state.
       isAnonymous: nxServiceDefaultsAnon(services[0]),
+      // Optional pseudonym shown to providers in place of "Customer #<id>"
+      // when isAnonymous is true. Pre-fills from the user's profile-level
+      // nickname (window.state.currentUser.nickname) so the customer
+      // doesn't have to retype it for every broadcast. Empty = use the
+      // numeric fallback "Customer #<id>".
+      anonDisplayName: (window.state.currentUser && window.state.currentUser.nickname) || "",
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -141,8 +147,18 @@ window.Views.CustomerBroadcast = {
             <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
               <div class="nx-form__label">Hide my name from providers</div>
               <div class="nx-form__value">
-                <span id="val-anon">${FORM_STATE.isAnonymous ? "On — providers see ‘Customer #" + ((window.state.currentUser && window.state.currentUser.id) || "?") + "’" : "Off — providers see your name"}</span>
+                <span id="val-anon">${FORM_STATE.isAnonymous ? "On" : "Off — providers see your name"}</span>
                 <span class="nx-form__chev" style="color:${FORM_STATE.isAnonymous ? "#22c55e" : ""}">${FORM_STATE.isAnonymous ? "●" : "○"}</span>
+              </div>
+            </div>
+            <div class="nx-form__row" id="row-anon-name" style="display:${FORM_STATE.isAnonymous ? "flex" : "none"}; flex-direction:column; align-items:stretch;">
+              <div class="nx-form__label" style="margin-bottom:6px;">Display as <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
+              <input class="nx-auth-input" type="text" id="bc-anon-name" maxlength="30"
+                placeholder="${window.esc("e.g. Alex, S.K., Houston Customer")}"
+                value="${window.esc(FORM_STATE.anonDisplayName || "")}"
+                autocapitalize="words" autocorrect="off" spellcheck="false">
+              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">
+                Leave blank and providers see <em>Customer #${(window.state.currentUser && window.state.currentUser.id) || "?"}</em>.
               </div>
             </div>
 
@@ -185,19 +201,28 @@ window.Views.CustomerBroadcast = {
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.length > 1 ? window.history.back() : window.navigate("home"));
 
-    // Anonymous toggle row — pre-set per service (ON for 18+ specialty,
-    // OFF for regular), always editable
+    // Anonymous toggle row — defaults set per-service, always editable.
+    // Tapping the toggle also reveals/hides the optional pseudonym row.
     document.getElementById("row-anon").addEventListener("click", () => {
       FORM_STATE.isAnonymous = !FORM_STATE.isAnonymous;
       const val = document.getElementById("val-anon");
       const chev = document.querySelector("#row-anon .nx-form__chev");
-      const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
       val.textContent = FORM_STATE.isAnonymous
-        ? `On — providers see ‘Customer #${uid}’`
+        ? "On"
         : "Off — providers see your name";
       chev.textContent = FORM_STATE.isAnonymous ? "●" : "○";
       chev.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
+      const anonName = document.getElementById("row-anon-name");
+      if (anonName) anonName.style.display = FORM_STATE.isAnonymous ? "flex" : "none";
     });
+
+    // Track the chosen pseudonym
+    const anonNameInput = document.getElementById("bc-anon-name");
+    if (anonNameInput) {
+      anonNameInput.addEventListener("input", (e) => {
+        FORM_STATE.anonDisplayName = e.target.value;
+      });
+    }
 
     // Service picker — in-app bottom sheet
     document.getElementById("row-service").addEventListener("click", async () => {
@@ -218,13 +243,14 @@ window.Views.CustomerBroadcast = {
         const valAnon = document.getElementById("val-anon");
         const chevAnon = document.querySelector("#row-anon .nx-form__chev");
         if (valAnon && chevAnon) {
-          const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
           valAnon.textContent = FORM_STATE.isAnonymous
-            ? `On — providers see ‘Customer #${uid}’`
+            ? "On"
             : "Off — providers see your name";
           chevAnon.textContent = FORM_STATE.isAnonymous ? "●" : "○";
           chevAnon.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
         }
+        const anonName = document.getElementById("row-anon-name");
+        if (anonName) anonName.style.display = FORM_STATE.isAnonymous ? "flex" : "none";
       }
     });
 
@@ -342,6 +368,9 @@ window.Views.CustomerBroadcast = {
         lng: coords.lng,
         target_provider_id: FORM_STATE.targetProviderId || null,
         is_anonymous: !!FORM_STATE.isAnonymous,
+        anon_display_name: (FORM_STATE.isAnonymous && FORM_STATE.anonDisplayName)
+          ? FORM_STATE.anonDisplayName.trim().slice(0, 30)
+          : null,
       };
 
       const res = await window.apiFetch("/api/requests", { method: "POST", body });

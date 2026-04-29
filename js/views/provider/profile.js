@@ -91,6 +91,14 @@ window.Views.ProviderProfile = {
               </div>
             </div>
 
+            <div class="nx-form__row" id="row-nickname" style="cursor:pointer;">
+              <div class="nx-form__label">Nickname</div>
+              <div class="nx-form__value">
+                <span id="val-nickname">${u.nickname ? window.esc(u.nickname) : "Not set"}</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" id="row-change-password" style="cursor:pointer;">
               <div class="nx-form__label">Password</div>
               <div class="nx-form__value">
@@ -202,6 +210,34 @@ window.Views.ProviderProfile = {
     // ---- Change password ----
     document.getElementById("row-change-password").addEventListener("click", () => {
       window.navigate("change-password");
+    });
+
+    // ---- Nickname ----
+    // Personal display name. The provider's public-facing identity to
+    // customers is `business_name`; this nickname is for any flows that
+    // surface the personal user name (e.g. messages, future anonymous-
+    // response feature). Leave blank to skip.
+    document.getElementById("row-nickname").addEventListener("click", async () => {
+      const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
+      const next = await window.nxPrompt(
+        "Pick a personal nickname (separate from your business name).\n\nUsed where the app would otherwise show your real legal name. Leave blank to clear.",
+        { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
+      );
+      if (next == null) return;
+      const trimmed = (next || "").trim().slice(0, 30);
+      if (trimmed === cur) return;
+      try {
+        const res = await window.apiFetch("/api/auth/nickname", {
+          method: "POST",
+          body: { nickname: trimmed || null },
+        });
+        const u2 = await window.apiMe();
+        window.persistUser(u2);
+        window.Views.ProviderProfile.render();
+        window.toast && window.toast(res.nickname ? "Nickname saved" : "Nickname cleared", "success");
+      } catch (err) {
+        window.nxAlert("Couldn't save: " + (err.message || err));
+      }
     });
 
     // ---- Edit <-> View ----
