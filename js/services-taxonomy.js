@@ -747,6 +747,41 @@ const SERVICES_TAXONOMY = {
         ]
       }
     }
+  },
+
+  // 18+ Adult Wellness — hidden from the Home grid unless the customer has
+  // opted in via Profile → "Show Adult Wellness". Apple-safe naming + scope:
+  // licensed massage / tantric / sensual wellness / intimacy coaching only.
+  // Anonymous-by-default at broadcast time; provider must opt-in to receive.
+  adult_wellness: {
+    label: "Adult Wellness",
+    is_adult: true,
+    subcategories: {
+      massage: {
+        label: "Massage Therapy (Adult)",
+        services: [
+          "Licensed / CMT Massage Therapy",
+          "Tantric Massage",
+          "Sensual Wellness Massage",
+          "Couples / Partner Massage"
+        ]
+      },
+      coaching: {
+        label: "Wellness Coaching",
+        services: [
+          "Intimacy Coaching",
+          "Body-work Wellness Session",
+          "Relationship Coaching"
+        ]
+      },
+      companionship: {
+        label: "Companionship",
+        services: [
+          "Non-sexual Companionship",
+          "Event Companion"
+        ]
+      }
+    }
   }
 
 };

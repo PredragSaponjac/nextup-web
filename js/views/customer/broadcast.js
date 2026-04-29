@@ -64,6 +64,9 @@ window.Views.CustomerBroadcast = {
     const catLabel = nxCategoryLabel(catKey);
     let services = nxServicesForCategory(catKey);
 
+    // Default anonymous ON for adult_wellness, OFF for everything else.
+    const tax = window.SERVICES_TAXONOMY || {};
+    const isAdult = !!(tax[catKey] && tax[catKey].is_adult);
     FORM_STATE = {
       catKey,
       service: services[0],
@@ -76,6 +79,8 @@ window.Views.CustomerBroadcast = {
       notes: "",
       targetProviderId,
       targetProviderName: null,     // resolved below if targetProviderId is set
+      isAdult,
+      isAnonymous: isAdult,         // adult: anon by default, others: off
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -122,7 +127,23 @@ window.Views.CustomerBroadcast = {
 
           ${targetBanner}
 
+          ${FORM_STATE.isAdult && !localStorage.getItem("nx_seen_adult_anon_card") ? `
+            <div id="adult-info-card" style="margin:12px 0; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; color:#fafaf9; font-size:13px; line-height:1.5;">
+              <div style="font-weight:600; margin-bottom:6px;">🔒 Anonymous by default</div>
+              <div style="color:var(--nx-text-muted);">Adult Wellness requests hide your name from providers. Your name stays private throughout the booking. You can change this on the form below.</div>
+              <button type="button" id="dismiss-adult-card" style="margin-top:10px; background:transparent; border:0; color:#22c55e; font-size:13px; padding:0; cursor:pointer;">Got it</button>
+            </div>
+          ` : ""}
+
           <div class="nx-form">
+            <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
+              <div class="nx-form__label">Hide my name from providers</div>
+              <div class="nx-form__value">
+                <span id="val-anon">${FORM_STATE.isAnonymous ? "On — providers see ‘Customer #" + ((window.state.currentUser && window.state.currentUser.id) || "?") + "’" : "Off — providers see your name"}</span>
+                <span class="nx-form__chev" style="color:${FORM_STATE.isAnonymous ? "#22c55e" : ""}">${FORM_STATE.isAnonymous ? "●" : "○"}</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" id="row-service">
               <div class="nx-form__label">What service?</div>
               <div class="nx-form__value">
@@ -161,6 +182,29 @@ window.Views.CustomerBroadcast = {
     `);
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.length > 1 ? window.history.back() : window.navigate("home"));
+
+    // Adult anon info card — dismiss + remember (one-time per device)
+    const dismissCard = document.getElementById("dismiss-adult-card");
+    if (dismissCard) {
+      dismissCard.addEventListener("click", () => {
+        try { localStorage.setItem("nx_seen_adult_anon_card", "1"); } catch (_) {}
+        const card = document.getElementById("adult-info-card");
+        if (card) card.style.display = "none";
+      });
+    }
+
+    // Anonymous toggle row — pre-set per category, always editable
+    document.getElementById("row-anon").addEventListener("click", () => {
+      FORM_STATE.isAnonymous = !FORM_STATE.isAnonymous;
+      const val = document.getElementById("val-anon");
+      const chev = document.querySelector("#row-anon .nx-form__chev");
+      const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
+      val.textContent = FORM_STATE.isAnonymous
+        ? `On — providers see ‘Customer #${uid}’`
+        : "Off — providers see your name";
+      chev.textContent = FORM_STATE.isAnonymous ? "●" : "○";
+      chev.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
+    });
 
     // Service picker — in-app bottom sheet
     document.getElementById("row-service").addEventListener("click", async () => {
@@ -287,6 +331,7 @@ window.Views.CustomerBroadcast = {
         lat: coords.lat,
         lng: coords.lng,
         target_provider_id: FORM_STATE.targetProviderId || null,
+        is_anonymous: !!FORM_STATE.isAnonymous,
       };
 
       const res = await window.apiFetch("/api/requests", { method: "POST", body });

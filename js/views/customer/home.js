@@ -59,6 +59,10 @@ function nxIconShirt() {
   // laundry — t-shirt
   return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M14 8l-8 4 4 8 4-2v18h16V18l4 2 4-8-8-4-4 4h-8z"/></svg>`;
 }
+function nxIconRose() {
+  // adult_wellness — minimalist rose
+  return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M22 8c-5 0-9 4-9 9 0 4 3 7 7 8v3c-4 1-9 4-9 8h22c0-4-5-7-9-8v-3c4-1 7-4 7-8 0-5-4-9-9-9z"/><path d="M22 14c-2 0-4 1-4 3"/></svg>`;
+}
 
 // Map backend-category key → icon fn + display label
 const NX_CATEGORY_ICONS = {
@@ -76,6 +80,7 @@ const NX_CATEGORY_ICONS = {
   tech:           nxIconWifi,
   events:         nxIconMusic,
   laundry:        nxIconShirt,
+  adult_wellness: nxIconRose,
 };
 
 window.Views.CustomerHome = {
@@ -84,14 +89,26 @@ window.Views.CustomerHome = {
     const hasProvider = !!(window.state.currentUser && window.state.currentUser.has_provider_profile);
     const modeCTA = hasProvider ? "I'm a provider ›" : "Become a provider ›";
 
-    const catKeys = Object.keys(window.SERVICES_TAXONOMY || {});
+    // Hide adult_wellness unless the customer has opted in via Profile.
+    const adultOptIn = !!(window.state.currentUser && window.state.currentUser.adult_optin);
+    const catKeys = Object.keys(window.SERVICES_TAXONOMY || {}).filter(key => {
+      const cat = window.SERVICES_TAXONOMY[key];
+      if (cat && cat.is_adult && !adultOptIn) return false;
+      return true;
+    });
     const tiles = catKeys.map(key => {
       const cat = window.SERVICES_TAXONOMY[key];
       const iconFn = NX_CATEGORY_ICONS[key] || nxIconScissors;
+      // Anonymous-by-default badge on adult tile to surface the privacy promise
+      // BEFORE the user taps in (per the design — early visibility beats late).
+      const anonBadge = (cat && cat.is_adult)
+        ? `<span class="nx-cat__badge" aria-label="Anonymous by default">🔒 Anonymous</span>`
+        : "";
       return `
         <button class="nx-cat" data-cat="${key}">
           ${iconFn()}
           <span class="nx-cat__label">${window.esc(cat.label)}</span>
+          ${anonBadge}
         </button>
       `;
     }).join("");
