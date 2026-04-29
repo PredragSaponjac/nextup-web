@@ -142,24 +142,19 @@ const SERVICES_TAXONOMY = {
           "Sound Bath / Healing"
         ]
       },
-      // 18+ specialty wellness sub-section. Hidden from the picker
-      // unless the user has opted in via Profile -> "Show 18+ wellness
-      // services". Service-type compartmentalization: customers
-      // browsing regular Spa & Wellness never see these specialty
-      // services unless they've explicitly enabled them, and providers
-      // also opt in (offers_adult) to receive these requests. Two
-      // locked doors keep regular and specialty flows from
-      // cross-matching.
-      wellness_18plus: {
-        label: "Wellness 18+ (separate)",
-        is_adult: true,
+      // Neutral-named specialty wellness services. No 18+ marker, no
+      // separate opt-in — the names themselves signal "not your
+      // standard Swedish massage" to people looking for that, while
+      // staying generic enough to pass App Store / Stripe review
+      // unflagged. Provider/customer match by service name as usual;
+      // the matching is service-name-specific so a Swedish customer
+      // never gets a Personal Companion provider and vice versa.
+      personal_wellness: {
+        label: "Personal Wellness",
         services: [
-          "Tantric Massage (18+)",
-          "Sensual Wellness Massage (18+)",
-          "Couples Intimacy Massage (18+)",
-          "Intimacy Coaching (18+)",
-          "Body-work Wellness Session (18+)",
-          "Companionship — non-sexual (18+)"
+          "Therapeutic Touch",
+          "Personal Companion",
+          "Couples Bodywork"
         ]
       }
     }

@@ -11,38 +11,28 @@ function nxCategoryLabel(catKey) {
   return (tax[catKey] && tax[catKey].label) || catKey;
 }
 
-/** Flatten all services in a category into a single array. Each entry carries
- *  the subcategory key so we can filter providers accordingly at broadcast time.
- *
- *  18+ services live in subcategories flagged with `is_adult: true` (e.g.
- *  spa_wellness.wellness_18plus). They are filtered OUT of the returned list
- *  unless `includeAdult=true` (set when the user has opted in via Profile).
- *  Separation principle: a user who wanted a regular massage must NEVER end
- *  up matched with an 18+ provider by accident. The opt-in is the gate.
- */
-function nxServicesForCategory(catKey, opts) {
-  const includeAdult = !!(opts && opts.includeAdult);
+/** Flatten all services in a category into a single array. */
+function nxServicesForCategory(catKey) {
   const tax = window.SERVICES_TAXONOMY || {};
   const cat = tax[catKey];
   if (!cat || !cat.subcategories) return ["General Service"];
   const list = [];
   Object.entries(cat.subcategories).forEach(([subKey, sub]) => {
-    if (sub.is_adult && !includeAdult) return;     // skip 18+ subcategory
     (sub.services || []).forEach(s => list.push(s));
   });
   return list.length ? list : ["General Service"];
 }
 
-/** Returns true if `serviceLabel` belongs to an 18+ subcategory of `catKey`.
- *  Used to flag the request as is_adult on submit and to default the
- *  anonymous toggle ON for 18+ services. */
-function nxServiceIsAdult(catKey, serviceLabel) {
-  const cat = (window.SERVICES_TAXONOMY || {})[catKey];
-  if (!cat || !cat.subcategories) return false;
-  for (const sub of Object.values(cat.subcategories)) {
-    if (sub.is_adult && (sub.services || []).includes(serviceLabel)) return true;
-  }
-  return false;
+/** Services where the anonymous-broadcast toggle defaults to ON.
+ *  These are services where customer privacy is typically expected
+ *  by default. The toggle is still always editable — this just
+ *  changes the default state. No taxonomy flag, no special routing. */
+const NX_ANON_DEFAULT_SERVICES = new Set([
+  "Personal Companion",
+  "Couples Bodywork",
+]);
+function nxServiceDefaultsAnon(serviceLabel) {
+  return NX_ANON_DEFAULT_SERVICES.has(serviceLabel);
 }
 
 /** Reverse lookup: given a service label + category, return the subcategory key.
@@ -83,17 +73,11 @@ window.Views.CustomerBroadcast = {
     const catKey = (params && params[0]) || "beauty";
     const targetProviderId = (params && params[1]) ? parseInt(params[1], 10) : null;
     const catLabel = nxCategoryLabel(catKey);
-    // Only include 18+ sub-services if the user has explicitly opted in.
-    const includeAdult = !!(window.state.currentUser && window.state.currentUser.adult_optin);
-    let services = nxServicesForCategory(catKey, { includeAdult });
+    let services = nxServicesForCategory(catKey);
 
-    // is_adult is per-SERVICE now (lives in a wellness_18plus subcategory),
-    // not per-category. We re-derive it on every service change below.
-    const initialService = services[0];
-    const isAdult = nxServiceIsAdult(catKey, initialService);
     FORM_STATE = {
       catKey,
-      service: initialService,
+      service: services[0],
       timeframeKey: "within_1h",
       timeLabel: "As soon as possible",
       scheduledAt: null,  // Date, if user picked a specific future date/time
@@ -103,8 +87,10 @@ window.Views.CustomerBroadcast = {
       notes: "",
       targetProviderId,
       targetProviderName: null,     // resolved below if targetProviderId is set
-      isAdult,
-      isAnonymous: isAdult,         // 18+ services: anon by default; others: off
+      // Anonymous toggle defaults ON for a small set of privacy-sensitive
+      // services (see NX_ANON_DEFAULT_SERVICES); OFF for everything else.
+      // Always editable on the form — this just sets the initial state.
+      isAnonymous: nxServiceDefaultsAnon(services[0]),
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -150,11 +136,6 @@ window.Views.CustomerBroadcast = {
           </header>
 
           ${targetBanner}
-
-          <div id="adult-separation-warn" style="display:${FORM_STATE.isAdult ? "block" : "none"}; margin:12px 0; padding:14px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; color:#fafaf9; font-size:13px; line-height:1.5;">
-            <div style="font-weight:600; margin-bottom:6px;">🔒 Specialty 18+ service · Anonymous by default</div>
-            <div style="color:var(--nx-text-muted);">This request only goes to providers who specifically offer 18+ wellness services. Your name is hidden by default — toggle below if you want to share it.</div>
-          </div>
 
           <div class="nx-form">
             <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
@@ -228,14 +209,12 @@ window.Views.CustomerBroadcast = {
       if (picked == null) return;
       FORM_STATE.service = picked;
       document.getElementById("val-service").textContent = picked;
-      // Re-derive adult/anon flags when the picked service changes. 18+
-      // services live in a wellness_18plus subcategory and default the
-      // anon toggle to ON; switching back to a regular service flips it
-      // back to OFF unless the user has manually toggled it.
-      const wasAdult = FORM_STATE.isAdult;
-      FORM_STATE.isAdult = nxServiceIsAdult(FORM_STATE.catKey, picked);
-      if (FORM_STATE.isAdult !== wasAdult) {
-        FORM_STATE.isAnonymous = FORM_STATE.isAdult;
+      // Re-default the anonymous toggle based on the new service. If
+      // the picked service is in NX_ANON_DEFAULT_SERVICES we flip the
+      // toggle ON for them; otherwise OFF. The user can still override.
+      const newDefault = nxServiceDefaultsAnon(picked);
+      if (newDefault !== FORM_STATE.isAnonymous) {
+        FORM_STATE.isAnonymous = newDefault;
         const valAnon = document.getElementById("val-anon");
         const chevAnon = document.querySelector("#row-anon .nx-form__chev");
         if (valAnon && chevAnon) {
@@ -246,9 +225,6 @@ window.Views.CustomerBroadcast = {
           chevAnon.textContent = FORM_STATE.isAnonymous ? "●" : "○";
           chevAnon.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
         }
-        // Toggle the 18+ separation warning
-        const warn = document.getElementById("adult-separation-warn");
-        if (warn) warn.style.display = FORM_STATE.isAdult ? "block" : "none";
       }
     });
 

@@ -63,14 +63,6 @@ window.Views.CustomerProfile = {
               </div>
             </div>
 
-            <div class="nx-form__row" id="row-adult-optin" style="cursor:pointer;">
-              <div class="nx-form__label">Show 18+ wellness services</div>
-              <div class="nx-form__value">
-                <span id="val-adult-optin">${u.adult_optin ? "On" : "Off"}</span>
-                <span class="nx-form__chev" style="color:${u.adult_optin ? "#22c55e" : ""}">${u.adult_optin ? "●" : "○"}</span>
-              </div>
-            </div>
-
             <div class="nx-form__row" style="cursor:default;">
               <div class="nx-form__label">App version</div>
               <div class="nx-form__value">
@@ -127,46 +119,6 @@ window.Views.CustomerProfile = {
 
     document.getElementById("row-change-password").addEventListener("click", () => {
       window.navigate("change-password");
-    });
-
-    // Adult Wellness opt-in. Shows the 18+ category tile on Home when ON.
-    // Server-side gate also requires age_confirmed; we surface that here.
-    document.getElementById("row-adult-optin").addEventListener("click", async () => {
-      const cur = !!(window.state.currentUser && window.state.currentUser.adult_optin);
-      if (cur) {
-        // Turning OFF — no confirmation needed
-        try {
-          await window.apiFetch("/api/auth/adult-optin", {
-            method: "POST",
-            body: { enabled: false, age_confirmed: false },
-          });
-          const u2 = await window.apiMe();
-          window.persistUser(u2);
-          window.Views.CustomerProfile.render();
-          window.toast && window.toast("Adult Wellness hidden", "success");
-        } catch (err) {
-          window.nxAlert("Couldn't update: " + (err.message || err));
-        }
-        return;
-      }
-      // Turning ON — require explicit 18+ confirmation
-      const ok = await window.nxConfirm(
-        "Show 18+ wellness services?\n\nThese sit inside Spa & Wellness as a separate sub-section: tantric massage, sensual wellness, intimacy coaching, companionship. They never appear in the regular service picker unless this is enabled.\n\nBy enabling this, you confirm you are 18 or older and that any service you book complies with local law.",
-        { okLabel: "I'm 18+ — enable", cancelLabel: "Not now", danger: false }
-      );
-      if (!ok) return;
-      try {
-        await window.apiFetch("/api/auth/adult-optin", {
-          method: "POST",
-          body: { enabled: true, age_confirmed: true },
-        });
-        const u2 = await window.apiMe();
-        window.persistUser(u2);
-        window.Views.CustomerProfile.render();
-        window.toast && window.toast("Adult Wellness enabled", "success");
-      } catch (err) {
-        window.nxAlert("Couldn't enable: " + (err.message || err));
-      }
     });
 
     document.getElementById("sign-out-btn").addEventListener("click", async () => {
