@@ -35,6 +35,41 @@ function nxServiceDefaultsAnon(serviceLabel) {
   return NX_ANON_DEFAULT_SERVICES.has(serviceLabel);
 }
 
+/** Main toggle label adapts to whether the user has set a profile
+ *  nickname. When set, ON = "use my nickname"; when not set, ON = the
+ *  numeric Customer #<id> fallback. The label tells the truth in
+ *  either case. */
+function nxAnonToggleLabel() {
+  const nick = (window.state.currentUser && window.state.currentUser.nickname) || "";
+  return nick
+    ? "Hide my name & use my nickname"
+    : "Hide my name from providers";
+}
+
+/** Sub-label that always shows what providers will actually see based
+ *  on the current toggle + override + profile nickname state. */
+function nxAnonSubLabel(state) {
+  if (!state.isAnonymous) return "Off — providers see your full name";
+  const override = (state.anonDisplayName || "").trim();
+  if (override) return `On — providers see ‘${override}’`;
+  const nick = (window.state.currentUser && window.state.currentUser.nickname) || "";
+  if (nick) return `On — providers see ‘${nick}’`;
+  const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
+  return `On — providers see ‘Customer #${uid}’`;
+}
+
+/** Hint under the Display-name input. Tells the user where the
+ *  pre-fill came from (their profile nickname) and what blank means
+ *  (numeric fallback). Updates as profile nickname changes. */
+function nxAnonInputHint() {
+  const nick = (window.state.currentUser && window.state.currentUser.nickname) || "";
+  const uid = (window.state.currentUser && window.state.currentUser.id) || "?";
+  if (nick) {
+    return `Pre-filled from your Profile nickname. Edit it for this request, or clear to use <em>Customer #${uid}</em> instead.`;
+  }
+  return `Leave blank and providers see <em>Customer #${uid}</em>. Tip: set a nickname in Profile to skip this step in the future.`;
+}
+
 /** Reverse lookup: given a service label + category, return the subcategory key.
  *  Used at broadcast time to tell the backend which subset of providers to match. */
 function nxSubcategoryForService(catKey, serviceLabel) {
@@ -145,20 +180,20 @@ window.Views.CustomerBroadcast = {
 
           <div class="nx-form">
             <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
-              <div class="nx-form__label">Hide my name from providers</div>
+              <div class="nx-form__label" id="lbl-anon">${nxAnonToggleLabel()}</div>
               <div class="nx-form__value">
-                <span id="val-anon">${FORM_STATE.isAnonymous ? "On" : "Off — providers see your name"}</span>
+                <span id="val-anon">${nxAnonSubLabel(FORM_STATE)}</span>
                 <span class="nx-form__chev" style="color:${FORM_STATE.isAnonymous ? "#22c55e" : ""}">${FORM_STATE.isAnonymous ? "●" : "○"}</span>
               </div>
             </div>
             <div class="nx-form__row" id="row-anon-name" style="display:${FORM_STATE.isAnonymous ? "flex" : "none"}; flex-direction:column; align-items:stretch;">
-              <div class="nx-form__label" style="margin-bottom:6px;">Display as <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
+              <div class="nx-form__label" style="margin-bottom:6px;">Display name for this request <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
               <input class="nx-auth-input" type="text" id="bc-anon-name" maxlength="30"
                 placeholder="${window.esc("e.g. Alex, S.K., Houston Customer")}"
                 value="${window.esc(FORM_STATE.anonDisplayName || "")}"
                 autocapitalize="words" autocorrect="off" spellcheck="false">
-              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">
-                Leave blank and providers see <em>Customer #${(window.state.currentUser && window.state.currentUser.id) || "?"}</em>.
+              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;" id="anon-name-hint">
+                ${nxAnonInputHint()}
               </div>
             </div>
 
@@ -203,24 +238,29 @@ window.Views.CustomerBroadcast = {
 
     // Anonymous toggle row — defaults set per-service, always editable.
     // Tapping the toggle also reveals/hides the optional pseudonym row.
-    document.getElementById("row-anon").addEventListener("click", () => {
-      FORM_STATE.isAnonymous = !FORM_STATE.isAnonymous;
+    const refreshAnonRow = () => {
       const val = document.getElementById("val-anon");
       const chev = document.querySelector("#row-anon .nx-form__chev");
-      val.textContent = FORM_STATE.isAnonymous
-        ? "On"
-        : "Off — providers see your name";
-      chev.textContent = FORM_STATE.isAnonymous ? "●" : "○";
-      chev.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
+      if (val) val.innerHTML = nxAnonSubLabel(FORM_STATE);
+      if (chev) {
+        chev.textContent = FORM_STATE.isAnonymous ? "●" : "○";
+        chev.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
+      }
       const anonName = document.getElementById("row-anon-name");
       if (anonName) anonName.style.display = FORM_STATE.isAnonymous ? "flex" : "none";
+    };
+    document.getElementById("row-anon").addEventListener("click", () => {
+      FORM_STATE.isAnonymous = !FORM_STATE.isAnonymous;
+      refreshAnonRow();
     });
 
-    // Track the chosen pseudonym
+    // Track the chosen pseudonym + refresh the sub-label live so the
+    // user can see exactly what providers will see as they type.
     const anonNameInput = document.getElementById("bc-anon-name");
     if (anonNameInput) {
       anonNameInput.addEventListener("input", (e) => {
         FORM_STATE.anonDisplayName = e.target.value;
+        refreshAnonRow();
       });
     }
 
@@ -240,17 +280,7 @@ window.Views.CustomerBroadcast = {
       const newDefault = nxServiceDefaultsAnon(picked);
       if (newDefault !== FORM_STATE.isAnonymous) {
         FORM_STATE.isAnonymous = newDefault;
-        const valAnon = document.getElementById("val-anon");
-        const chevAnon = document.querySelector("#row-anon .nx-form__chev");
-        if (valAnon && chevAnon) {
-          valAnon.textContent = FORM_STATE.isAnonymous
-            ? "On"
-            : "Off — providers see your name";
-          chevAnon.textContent = FORM_STATE.isAnonymous ? "●" : "○";
-          chevAnon.style.color = FORM_STATE.isAnonymous ? "#22c55e" : "";
-        }
-        const anonName = document.getElementById("row-anon-name");
-        if (anonName) anonName.style.display = FORM_STATE.isAnonymous ? "flex" : "none";
+        refreshAnonRow();
       }
     });
 
