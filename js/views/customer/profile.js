@@ -135,7 +135,7 @@ window.Views.CustomerProfile = {
     document.getElementById("row-nickname").addEventListener("click", async () => {
       const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
       const next = await window.nxPrompt(
-        "Pick a nickname (e.g. Alex, S.K., Houston Customer).\n\nProviders will see this instead of your full name when you broadcast anonymously. Leave blank to clear.",
+        "Set a nickname (e.g. Alex, S.K., Houston Customer).\n\nWhy: a nickname gives you the option to present yourself to providers as either your real name or this nickname — your choice, every time you broadcast. Leave blank to clear.",
         { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
       );
       if (next == null) return;             // user cancelled

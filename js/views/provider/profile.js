@@ -220,7 +220,7 @@ window.Views.ProviderProfile = {
     document.getElementById("row-nickname").addEventListener("click", async () => {
       const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
       const next = await window.nxPrompt(
-        "Pick a personal nickname (separate from your business name).\n\nUsed where the app would otherwise show your real legal name. Leave blank to clear.",
+        "Set a personal nickname (separate from your business name).\n\nWhy: a nickname gives you the option to present yourself to customers as either your real name or this nickname — your choice, every time you respond. Leave blank to clear.",
         { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
       );
       if (next == null) return;

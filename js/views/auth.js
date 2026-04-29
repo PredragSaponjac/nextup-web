@@ -123,8 +123,8 @@ window.Views.Auth = {
             <div class="nx-form__row">
               <div class="nx-form__label">Nickname <span style="color:var(--nx-text-muted); font-weight:400;">(optional)</span></div>
               <input class="nx-auth-input" type="text" id="reg-nickname" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="e.g. Alex, S.K., Houston Customer">
-              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px;">
-                Used instead of your full name when you broadcast anonymously. Can be set or changed later in Profile.
+              <div style="font-size:11px; color:var(--nx-text-muted); margin-top:6px; line-height:1.5;">
+                Why we ask: a nickname gives you the option to present yourself to ${isProvider ? "customers" : "providers"} as either your real name or this nickname — your call, every time you ${isProvider ? "respond" : "broadcast"}. Skip it now and we'll show your full name; you can add or change a nickname later in Profile.
               </div>
             </div>
             <div class="nx-form__row">
