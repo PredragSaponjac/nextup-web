@@ -12,20 +12,24 @@
      in the public website AND inside the Capacitor app webview, where
      ./base.css and ./style.css don't exist. */
   *, *::before, *::after { box-sizing: border-box; }
-  html, body {
+  /* iOS WKWebView scroll fix — see terms.html for the full reasoning.
+     html locked to viewport, body is the explicit scroll container.
+     Avoids the nested-scroll trap that iOS handles unreliably. */
+  html {
     margin: 0;
     padding: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    width: 100%;
-    min-height: 100%;
+    height: 100%;
     background: #0a0a0a;
-    color: #fafaf9;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -webkit-text-size-adjust: 100%;
   }
   body {
+    margin: 0;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #0a0a0a;
+    color: #fafaf9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);

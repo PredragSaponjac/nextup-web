@@ -268,11 +268,36 @@ window.Views.ProviderProfile = {
     // Personal display name. The provider's public-facing identity to
     // customers is `business_name`; this nickname is for any flows that
     // surface the personal user name (e.g. messages, future anonymous-
-    // response feature). Leave blank to skip.
+    // response feature).
     document.getElementById("row-nickname").addEventListener("click", async () => {
       const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
+
+      // v1.3.13 — explicit "Remove nickname" option when one is set,
+      // instead of burying "leave blank to clear" in prompt body.
+      if (cur) {
+        const choice = await window.nxConfirm(
+          `Your current nickname is "${cur}".\n\nWhat would you like to do?`,
+          { okLabel: "Edit nickname", cancelLabel: "Remove nickname" }
+        );
+        if (choice === false) {
+          if (!(await window.nxConfirm("Remove your nickname? Customers will see your real name instead.", { okLabel: "Remove", danger: true }))) return;
+          try {
+            await window.apiFetch("/api/auth/nickname", { method: "POST", body: { nickname: null } });
+            const u2 = await window.apiMe();
+            window.persistUser(u2);
+            window.Views.ProviderProfile.render();
+            window.toast && window.toast("Nickname removed", "success");
+          } catch (err) {
+            window.nxAlert("Couldn't remove: " + (err.message || err));
+          }
+          return;
+        }
+      }
+
       const next = await window.nxPrompt(
-        "Set a personal nickname (separate from your business name).\n\nWhy: a nickname gives you the option to present yourself to customers as either your real name or this nickname — your choice, every time you respond. Leave blank to clear.",
+        cur
+          ? "Edit your nickname:"
+          : "Set a personal nickname (separate from your business name).\n\nWhy: a nickname gives you the option to present yourself to customers as either your real name or this nickname — your choice, every time you respond.",
         { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
       );
       if (next == null) return;

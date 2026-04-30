@@ -180,8 +180,36 @@ window.Views.CustomerProfile = {
     // user's full legal name when they want extra privacy.
     document.getElementById("row-nickname").addEventListener("click", async () => {
       const cur = (window.state.currentUser && window.state.currentUser.nickname) || "";
+
+      // v1.3.13 — if user already has a nickname set, give them an
+      // explicit "Remove nickname" option instead of burying it in
+      // "leave blank to clear" instructions inside the prompt.
+      if (cur) {
+        const choice = await window.nxConfirm(
+          `Your current nickname is "${cur}".\n\nWhat would you like to do?`,
+          { okLabel: "Edit nickname", cancelLabel: "Remove nickname" }
+        );
+        if (choice === false) {
+          // User chose "Remove nickname"
+          if (!(await window.nxConfirm("Remove your nickname? Providers will see your real name instead.", { okLabel: "Remove", danger: true }))) return;
+          try {
+            await window.apiFetch("/api/auth/nickname", { method: "POST", body: { nickname: null } });
+            const u2 = await window.apiMe();
+            window.persistUser(u2);
+            window.Views.CustomerProfile.render();
+            window.toast && window.toast("Nickname removed", "success");
+          } catch (err) {
+            window.nxAlert("Couldn't remove: " + (err.message || err));
+          }
+          return;
+        }
+        // choice === true → fall through to edit prompt
+      }
+
       const next = await window.nxPrompt(
-        "Set a nickname (e.g. Alex, S.K., Houston Customer).\n\nWhy: a nickname gives you the option to present yourself to providers as either your real name or this nickname — your choice, every time you broadcast. Leave blank to clear.",
+        cur
+          ? "Edit your nickname:"
+          : "Set a nickname (e.g. Alex, S.K., Houston Customer).\n\nWhy: a nickname gives you the option to present yourself to providers as either your real name or this nickname — your choice, every time you broadcast.",
         { okLabel: "Save", placeholder: "Up to 30 characters", type: "text" }
       );
       if (next == null) return;             // user cancelled
