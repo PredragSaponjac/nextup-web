@@ -31,6 +31,29 @@ const NX_ANON_DEFAULT_SERVICES = new Set([
   "Personal Companion",
   "Couples Bodywork",
 ]);
+
+/** Categories that floor the verification level — customer cannot pick
+ *  "Anyone" for these; the minimum is "ID-verified providers". Mirrors
+ *  the backend HIGH_TRUST_CATEGORIES set. */
+const NX_HIGH_TRUST_CATEGORIES = new Set(["childcare", "senior_care"]);
+const NX_HIGH_TRUST_SERVICES = new Set([
+  "Therapeutic Touch",
+  "Personal Companion",
+  "Couples Bodywork",
+]);
+function nxIsHighTrust(catKey, serviceLabel) {
+  if (NX_HIGH_TRUST_CATEGORIES.has(catKey)) return true;
+  if (serviceLabel && NX_HIGH_TRUST_SERVICES.has(serviceLabel)) return true;
+  return false;
+}
+
+/** The verification level options shown to the customer at broadcast.
+ *  "any" is filtered out for high-trust categories. */
+const NX_VERIFICATION_LEVELS = [
+  { value: "any",   label: "Anyone (fastest response)" },
+  { value: "id",    label: "ID-verified providers only" },
+  { value: "id_bg", label: "ID + Background-checked only" },
+];
 function nxServiceDefaultsAnon(serviceLabel) {
   return NX_ANON_DEFAULT_SERVICES.has(serviceLabel);
 }
@@ -110,6 +133,9 @@ window.Views.CustomerBroadcast = {
     const catLabel = nxCategoryLabel(catKey);
     let services = nxServicesForCategory(catKey);
 
+    // Verification floor — for high-trust categories, default to ID-verified
+    // (cannot be "any"). For the rest, default "any" (fastest response).
+    const isHighTrust = nxIsHighTrust(catKey, services[0]);
     FORM_STATE = {
       catKey,
       service: services[0],
@@ -132,6 +158,11 @@ window.Views.CustomerBroadcast = {
       // doesn't have to retype it for every broadcast. Empty = use the
       // numeric fallback "Customer #<id>".
       anonDisplayName: (window.state.currentUser && window.state.currentUser.nickname) || "",
+      // Provider verification floor for THIS broadcast.
+      //   any   = no filter (anyone in category can respond)
+      //   id    = only providers with id_verification_status=verified
+      //   id_bg = only providers who are also background-checked
+      requiredProviderVerification: isHighTrust ? "id" : "any",
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -179,6 +210,14 @@ window.Views.CustomerBroadcast = {
           ${targetBanner}
 
           <div class="nx-form">
+            <div class="nx-form__row" id="row-verification" style="cursor:pointer;">
+              <div class="nx-form__label">Provider verification</div>
+              <div class="nx-form__value">
+                <span id="val-verification">${window.esc(this._verificationLabel(FORM_STATE.requiredProviderVerification))}</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" id="row-anon" style="cursor:pointer;">
               <div class="nx-form__label" id="lbl-anon">${nxAnonToggleLabel()}</div>
               <div class="nx-form__value">
@@ -235,6 +274,26 @@ window.Views.CustomerBroadcast = {
     `);
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.length > 1 ? window.history.back() : window.navigate("home"));
+
+    // Verification level picker — bottom sheet
+    document.getElementById("row-verification").addEventListener("click", async () => {
+      const isHighTrust = nxIsHighTrust(FORM_STATE.catKey, FORM_STATE.service);
+      // For high-trust categories, exclude "any" — minimum is ID-verified
+      const opts = isHighTrust
+        ? NX_VERIFICATION_LEVELS.filter(o => o.value !== "any")
+        : NX_VERIFICATION_LEVELS.slice();
+      const picked = await window.nxSheet({
+        title: "Provider verification",
+        hint: isHighTrust
+          ? "ID verification is required for this category. Background check is strongly recommended for sensitive services."
+          : "Stricter verification = fewer responses but more vetted providers.",
+        options: opts,
+        selectedValue: FORM_STATE.requiredProviderVerification,
+      });
+      if (picked == null) return;
+      FORM_STATE.requiredProviderVerification = picked;
+      document.getElementById("val-verification").textContent = this._verificationLabel(picked);
+    });
 
     // Anonymous toggle row — defaults set per-service, always editable.
     // Tapping the toggle also reveals/hides the optional pseudonym row.
@@ -337,6 +396,12 @@ window.Views.CustomerBroadcast = {
     document.getElementById("broadcast-btn").addEventListener("click", () => this._submit());
   },
 
+  /** Pretty label for the verification dropdown current value. */
+  _verificationLabel(value) {
+    const found = NX_VERIFICATION_LEVELS.find(o => o.value === value);
+    return found ? found.label : "Anyone";
+  },
+
   /** Map a future Date to the nearest backend timeframe bucket. */
   _bucketForDate(d) {
     const hoursAhead = (d.getTime() - Date.now()) / (1000 * 60 * 60);
@@ -401,6 +466,7 @@ window.Views.CustomerBroadcast = {
         anon_display_name: (FORM_STATE.isAnonymous && FORM_STATE.anonDisplayName)
           ? FORM_STATE.anonDisplayName.trim().slice(0, 30)
           : null,
+        required_provider_verification: FORM_STATE.requiredProviderVerification || "any",
       };
 
       const res = await window.apiFetch("/api/requests", { method: "POST", body });
