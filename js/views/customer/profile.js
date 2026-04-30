@@ -87,7 +87,7 @@ window.Views.CustomerProfile = {
                   ${isReject ? "ID verification rejected" : "Verify your identity (optional)"}
                 </div>
                 <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:10px;">
-                  ${isReject ? window.esc(reason || "Photos didn't pass review. Try again with a clearer ID and selfie.") : "Optional, but providers can filter for verified customers — verifying makes you eligible for more service categories. Free during launch."}
+                  ${isReject ? window.esc(reason || "Photos didn't pass review. Try again with a clearer ID and selfie.") : "Optional, but providers can filter for verified customers — verifying makes you eligible for more service categories. $5 one-time fee, automated via Persona, takes about 60 seconds."}
                 </div>
                 <button class="nx-cta" id="cust-verify-id-btn" type="button" style="background:${isReject ? "#ef4444" : "#22c55e"}; color:#000; font-weight:600; padding:10px 16px; min-height:auto; width:auto; display:inline-block;">
                   ${isReject ? "Try again" : "Start verification"}
@@ -103,14 +103,14 @@ window.Views.CustomerProfile = {
               </div>
             </div>
 
-            <a href="terms.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+            <a href="terms.html" class="nx-form__row" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; text-decoration:none; color:inherit;">
               <div class="nx-form__label">Terms of Service</div>
               <div class="nx-form__value">
                 <span class="nx-form__chev">›</span>
               </div>
             </a>
 
-            <a href="privacy.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+            <a href="privacy.html" class="nx-form__row" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; text-decoration:none; color:inherit;">
               <div class="nx-form__label">Privacy Policy</div>
               <div class="nx-form__value">
                 <span class="nx-form__chev">›</span>

@@ -104,7 +104,7 @@ window.Views.ProviderProfile = {
                   ${isReject ? "ID verification rejected" : "Get ID verified"}
                 </div>
                 <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:10px;">
-                  ${isReject ? window.esc(reason || "Photos didn't pass review. Try again with a clearer ID and selfie.") : "Required to respond to childcare, senior care, and specialty wellness requests. Optional but recommended for every other category \u2014 verified providers get more bookings. Upload your ID and a selfie. Free during launch (future automated checks paid by provider)."}
+                  ${isReject ? window.esc(reason || "Photos didn't pass review. Try again with a clearer ID and selfie.") : "Required to respond to specialty wellness requests. Optional but recommended for every other category \u2014 verified providers get more bookings. $5 one-time fee, automated via Persona, takes about 60 seconds."}
                 </div>
                 <button class="nx-cta" id="bp-verify-id-btn" type="button" style="background:${isReject ? "#ef4444" : "#f0b400"}; color:#000; font-weight:600; padding:10px 16px; min-height:auto; width:auto; display:inline-block;">
                   ${isReject ? "Try again" : "Start verification"}
@@ -149,14 +149,14 @@ window.Views.ProviderProfile = {
               </div>
             ` : ``}
 
-            <a href="terms.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+            <a href="terms.html" class="nx-form__row" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; text-decoration:none; color:inherit;">
               <div class="nx-form__label">Terms of Service</div>
               <div class="nx-form__value">
                 <span class="nx-form__chev">›</span>
               </div>
             </a>
 
-            <a href="privacy.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+            <a href="privacy.html" class="nx-form__row" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; text-decoration:none; color:inherit;">
               <div class="nx-form__label">Privacy Policy</div>
               <div class="nx-form__value">
                 <span class="nx-form__chev">›</span>
