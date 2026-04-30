@@ -38,6 +38,11 @@ window.Views.CustomerResponses = {
     if (!requestId) { window.navigate("home"); return; }
 
     this.requestId = requestId;
+    // v1.3.21 — fresh visit resets the dismissed timer. Without this,
+    // a customer who hit "Keep waiting" on one request and then
+    // navigated to a different request would inherit the 3-min
+    // suppression — wrong UX.
+    this._expandDismissedAt = 0;
     await this._fetchAndRender();
 
     clearInterval(NX_POLL);
@@ -91,7 +96,14 @@ window.Views.CustomerResponses = {
             <div>Broadcasting to online providers within ${radius} mi (${window.esc(TF_LABEL[tf] || tf)}).</div>
           </div>
         `);
-        if (elapsedMin >= 3) {
+        // v1.3.21 — "Keep waiting" gives the customer another 3-min
+        // breather before the card pops up again. Without this, hiding
+        // the card via display:none was instantly undone by the next
+        // 15-second polling re-render.
+        const dismissedMs = this._expandDismissedAt || 0;
+        const sinceDismissMin = (Date.now() - dismissedMs) / 60000;
+        const shouldShowExpand = elapsedMin >= 3 && (dismissedMs === 0 || sinceDismissMin >= 3);
+        if (shouldShowExpand) {
           pieces.push(this._renderExpandCard(tf));
         }
       } else {
@@ -157,8 +169,13 @@ window.Views.CustomerResponses = {
       }
       const keepWaitingBtn = document.getElementById("nx-keep-waiting");
       if (keepWaitingBtn) keepWaitingBtn.addEventListener("click", () => {
+        // v1.3.21 — record the dismiss time so the next 15-second poll
+        // doesn't immediately re-render the card. The card will
+        // re-appear in 3 more minutes if there are still no responses.
+        this._expandDismissedAt = Date.now();
         const card = document.getElementById("nx-expand-card");
         if (card) card.style.display = "none";
+        window.toast && window.toast("Got it — we'll check back in 3 minutes.", "success");
       });
       const cancelBtn = document.getElementById("nx-cancel-broadcast");
       if (cancelBtn) cancelBtn.addEventListener("click", () => this._cancelBroadcast());
