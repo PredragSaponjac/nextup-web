@@ -54,6 +54,14 @@ const NX_VERIFICATION_LEVELS = [
   { value: "id",    label: "ID-verified providers only" },
   { value: "id_bg", label: "ID + Background-checked only" },
 ];
+
+/** Provider entity-type filter — three modes: both / individuals only /
+ *  businesses only. Default "any" everywhere; customer chooses. */
+const NX_ENTITY_TYPES = [
+  { value: "any",        label: "Both individuals and businesses" },
+  { value: "individual", label: "Individuals only (sole proprietors)" },
+  { value: "business",   label: "Businesses only (registered companies)" },
+];
 function nxServiceDefaultsAnon(serviceLabel) {
   return NX_ANON_DEFAULT_SERVICES.has(serviceLabel);
 }
@@ -163,6 +171,10 @@ window.Views.CustomerBroadcast = {
       //   id    = only providers with id_verification_status=verified
       //   id_bg = only providers who are also background-checked
       requiredProviderVerification: isHighTrust ? "id" : "any",
+      // Provider entity type filter — both / individual / business.
+      // Default "any" — customer can narrow if they prefer one or the
+      // other.
+      requiredProviderEntityType: "any",
     };
 
     // When a specific provider was picked, fetch their profile so we can:
@@ -210,6 +222,14 @@ window.Views.CustomerBroadcast = {
           ${targetBanner}
 
           <div class="nx-form">
+            <div class="nx-form__row" id="row-entity-type" style="cursor:pointer;">
+              <div class="nx-form__label">Provider type</div>
+              <div class="nx-form__value">
+                <span id="val-entity-type">${window.esc(this._entityTypeLabel(FORM_STATE.requiredProviderEntityType))}</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <div class="nx-form__row" id="row-verification" style="cursor:pointer;">
               <div class="nx-form__label">Provider verification</div>
               <div class="nx-form__value">
@@ -274,6 +294,19 @@ window.Views.CustomerBroadcast = {
     `);
 
     document.getElementById("back-btn").addEventListener("click", () => window.history.length > 1 ? window.history.back() : window.navigate("home"));
+
+    // Entity type picker — bottom sheet
+    document.getElementById("row-entity-type").addEventListener("click", async () => {
+      const picked = await window.nxSheet({
+        title: "Provider type",
+        hint: "Pick whichever you prefer — or 'Both' to see all matches.",
+        options: NX_ENTITY_TYPES,
+        selectedValue: FORM_STATE.requiredProviderEntityType,
+      });
+      if (picked == null) return;
+      FORM_STATE.requiredProviderEntityType = picked;
+      document.getElementById("val-entity-type").textContent = this._entityTypeLabel(picked);
+    });
 
     // Verification level picker — bottom sheet
     document.getElementById("row-verification").addEventListener("click", async () => {
@@ -402,6 +435,12 @@ window.Views.CustomerBroadcast = {
     return found ? found.label : "Anyone";
   },
 
+  /** Pretty label for the entity-type dropdown current value. */
+  _entityTypeLabel(value) {
+    const found = NX_ENTITY_TYPES.find(o => o.value === value);
+    return found ? found.label : "Both";
+  },
+
   /** Map a future Date to the nearest backend timeframe bucket. */
   _bucketForDate(d) {
     const hoursAhead = (d.getTime() - Date.now()) / (1000 * 60 * 60);
@@ -467,6 +506,7 @@ window.Views.CustomerBroadcast = {
           ? FORM_STATE.anonDisplayName.trim().slice(0, 30)
           : null,
         required_provider_verification: FORM_STATE.requiredProviderVerification || "any",
+        required_provider_entity_type: FORM_STATE.requiredProviderEntityType || "any",
       };
 
       const res = await window.apiFetch("/api/requests", { method: "POST", body });

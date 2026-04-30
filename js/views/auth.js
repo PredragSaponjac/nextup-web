@@ -111,6 +111,28 @@ window.Views.Auth = {
 
           <form id="register-form" class="nx-form">
             ${isProvider ? `
+              <div class="nx-form__row" style="flex-direction:column; align-items:stretch;">
+                <div class="nx-form__label" style="margin-bottom:8px;">Registering as</div>
+                <div style="display:flex; gap:8px;">
+                  <label class="nx-entity-pill" style="flex:1; cursor:pointer;">
+                    <input type="radio" name="reg-entity" value="individual" checked style="display:none;">
+                    <div style="border:1px solid var(--nx-border); border-radius:12px; padding:14px 12px; text-align:center;">
+                      <div style="font-size:14px; font-weight:600; color:var(--nx-text);">Individual</div>
+                      <div style="font-size:11px; color:var(--nx-text-muted); margin-top:2px;">Sole proprietor, freelancer</div>
+                    </div>
+                  </label>
+                  <label class="nx-entity-pill" style="flex:1; cursor:pointer;">
+                    <input type="radio" name="reg-entity" value="business" style="display:none;">
+                    <div style="border:1px solid var(--nx-border); border-radius:12px; padding:14px 12px; text-align:center;">
+                      <div style="font-size:14px; font-weight:600; color:var(--nx-text);">Business</div>
+                      <div style="font-size:11px; color:var(--nx-text-muted); margin-top:2px;">LLC, corp, salon, agency</div>
+                    </div>
+                  </label>
+                </div>
+                <div style="font-size:11px; color:var(--nx-text-muted); margin-top:8px; line-height:1.5;">
+                  Customers can filter for individuals only, businesses only, or both. You can change this later in Profile.
+                </div>
+              </div>
               <div class="nx-form__row">
                 <div class="nx-form__label">Business name</div>
                 <input class="nx-auth-input" type="text" id="reg-business" required placeholder="e.g. Studio Noir">
@@ -179,6 +201,27 @@ window.Views.Auth = {
     document.getElementById("back-btn").addEventListener("click", () => window.navigate("role-select"));
     document.getElementById("go-login").addEventListener("click", () => window.navigate("login"));
     window.nxAttachEye && window.nxAttachEye("reg-password");
+
+    // Entity-type radio visual feedback (provider only)
+    if (isProvider) {
+      const refreshEntityPills = () => {
+        document.querySelectorAll("input[name=reg-entity]").forEach(r => {
+          const card = r.parentElement.querySelector("div");
+          if (!card) return;
+          if (r.checked) {
+            card.style.borderColor = "#22c55e";
+            card.style.background = "rgba(34,197,94,0.08)";
+          } else {
+            card.style.borderColor = "var(--nx-border)";
+            card.style.background = "transparent";
+          }
+        });
+      };
+      document.querySelectorAll("input[name=reg-entity]").forEach(r => {
+        r.addEventListener("change", refreshEntityPills);
+      });
+      refreshEntityPills();
+    }
 
     // Location picker (provider only) — wire radio/panel + GPS button listeners
     if (isProvider && window.nxLocationPicker) {
@@ -350,6 +393,9 @@ window.Views.Auth = {
             } catch (_) { /* can set later from Profile */ }
           }
 
+          // Read the entity-type radio (Individual / Business)
+          const entityRadio = document.querySelector("input[name=reg-entity]:checked");
+          const entityType = entityRadio ? entityRadio.value : "individual";
           await window.apiFetch("/api/providers/profile", {
             method: "POST",
             body: {
@@ -363,6 +409,7 @@ window.Views.Auth = {
               lat: loc.lat,
               lng: loc.lng,
               phone: document.getElementById("reg-phone").value.trim(),
+              entity_type: entityType,
             },
           });
         }
