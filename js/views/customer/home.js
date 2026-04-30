@@ -163,9 +163,16 @@ window.Views.CustomerHome = {
           const cat = (window.SERVICES_TAXONOMY[catKey] || {}).label || catKey;
           let body;
           if (catKey === "drive_transport") {
-            body = `${cat} is coming soon.\n\nWe're working on transport services like drive-my-car, pet transport, and designated driver. Not bookable yet — we're putting the right safety stack in place first. Stay tuned.`;
+            body = `${cat} is coming soon.\n\nTransport services like drive-my-car, pet transport, and designated driver involve real safety risk. We're not opening bookings in this category until our full driver-verification + insurance program is in place. We'll announce in the app when it opens. Thanks for your patience.`;
+          } else if (catKey === "childcare" || catKey === "senior_care") {
+            // Childcare and senior care involve vulnerable people and
+            // catastrophic-loss risk. The honest framing: not bookable
+            // until the full safety + insurance + license-verification
+            // program is in place. NO timeline commitment — promises
+            // create breach exposure if the rollout slips.
+            body = `${cat} is coming soon.\n\n${cat} involves real risk to vulnerable people. We're not opening bookings in this category until our full safety, verification, and insurance program is fully in place. We'll announce in the app when it opens. Thanks for your patience.`;
           } else {
-            body = `${cat} is coming soon.\n\nWe're putting extra safety verification in place for this category before opening bookings. Stay tuned — should be ready in the next few weeks.`;
+            body = `${cat} is coming soon.\n\nWe're putting our full safety + verification program in place before opening bookings in this category. We'll announce in the app when it opens.`;
           }
           await window.nxAlert(body, { okLabel: "Got it" });
           return;

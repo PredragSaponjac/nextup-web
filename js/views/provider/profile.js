@@ -295,11 +295,22 @@ window.Views.ProviderProfile = {
     // services array across categories by looking up each service in each
     // category's service names.
     const taxonomy = window.SERVICES_TAXONOMY || {};
+    // v1.3.5 — Coming Soon subs (mirror of backend DISABLED_SUBCATEGORIES).
+    // The provider profile editor must NOT surface services from these
+    // subcategories — providers can't legally accept work in them yet.
+    const NX_DISABLED_SUBS = new Set([
+      "home_repair/plumbing",
+      "home_repair/electrical",
+      "home_repair/hvac",
+      "home_repair/roofing",
+      "automotive/mobile_mechanic",
+    ]);
     const servicesForCategory = (catKey) => {
       const cat = taxonomy[catKey];
       if (!cat) return [];
       const out = [];
-      Object.values(cat.subcategories || {}).forEach(sub => {
+      Object.entries(cat.subcategories || {}).forEach(([subKey, sub]) => {
+        if (NX_DISABLED_SUBS.has(`${catKey}/${subKey}`)) return;
         (sub.services || []).forEach(s => out.push(s));
       });
       return out;

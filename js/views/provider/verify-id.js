@@ -222,12 +222,6 @@ window.Views.ProviderVerifyId = {
   _stepIdHtml() {
     return `
       <div style="padding:0 4px;">
-        <div style="background:#1a1a1a; border:1px solid #22c55e; border-radius:14px; padding:14px 16px; margin-bottom:14px;">
-          <div style="font-family:var(--nx-font-sans); font-size:13px; color:#22c55e; font-weight:600; margin-bottom:4px;">Free during launch</div>
-          <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5;">
-            ID verification is currently complimentary while we're in early launch. Future automated verification will be paid by providers (~$5 ID check + $30 background check, US only). Verification is always optional unless you offer childcare, senior care, or specialty wellness.
-          </div>
-        </div>
         <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:14px;">
           <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.6;">
             <strong style="color:var(--nx-text);">What works:</strong> driver's license, state ID, or passport. The whole document must be visible — all four corners, no glare, no fingers covering text.

@@ -12,15 +12,65 @@ function nxCategoryLabel(catKey) {
 }
 
 /** Flatten all services in a category into a single array. */
+/** Subcategories blocked at the API (DISABLED_SUBCATEGORIES on the backend).
+ *  Format: "<categoryKey>/<subKey>". Services inside these subcategories
+ *  appear in the picker greyed-out with a "Coming soon" badge — tapping
+ *  them does NOT close the sheet, instead an inline banner explains why.
+ *  Defense in depth: even if the front-end gate is bypassed, the API
+ *  rejects the request with a 400. */
+const NX_DISABLED_SUBCATEGORIES = new Set([
+  "home_repair/plumbing",
+  "home_repair/electrical",
+  "home_repair/hvac",
+  "home_repair/roofing",
+  "automotive/mobile_mechanic",
+]);
+
+/** Per-subcategory copy shown when a customer taps a Coming-Soon row.
+ *  Stays informative without committing to a timeline (no
+ *  "in two weeks" promises that can be used against us). */
+const NX_DISABLED_SUBCATEGORY_REASON = {
+  "home_repair/plumbing":   "Plumbing is rolling out once we verify Texas plumber licenses + insurance. The rest of Home Repair is open.",
+  "home_repair/electrical": "Electrical work is rolling out once we verify Texas electrician licenses + insurance. The rest of Home Repair is open.",
+  "home_repair/hvac":       "HVAC services are rolling out once we verify HVAC licenses + insurance (gas / CO safety). The rest of Home Repair is open.",
+  "home_repair/roofing":    "Roofing is rolling out once we verify roofer licenses, fall-safety insurance, and worker comp. The rest of Home Repair is open.",
+  "automotive/mobile_mechanic": "Mobile mechanic services are rolling out once we verify mechanic certifications + safety insurance. Other Automotive services are open.",
+};
+
 function nxServicesForCategory(catKey) {
   const tax = window.SERVICES_TAXONOMY || {};
   const cat = tax[catKey];
-  if (!cat || !cat.subcategories) return ["General Service"];
+  if (!cat || !cat.subcategories) return [{ value: "General Service", label: "General Service" }];
   const list = [];
   Object.entries(cat.subcategories).forEach(([subKey, sub]) => {
-    (sub.services || []).forEach(s => list.push(s));
+    const subKeyFull = `${catKey}/${subKey}`;
+    const isDisabled = NX_DISABLED_SUBCATEGORIES.has(subKeyFull);
+    const reason = NX_DISABLED_SUBCATEGORY_REASON[subKeyFull] || "Coming soon.";
+    (sub.services || []).forEach(s => {
+      list.push({
+        value: s,
+        label: s,
+        disabled: isDisabled,
+        disabledReason: isDisabled ? reason : undefined,
+      });
+    });
   });
-  return list.length ? list : ["General Service"];
+  return list.length ? list : [{ value: "General Service", label: "General Service" }];
+}
+
+/** Convenience: list of just the labels (for legacy code paths that
+ *  expect a flat string array — e.g., the targetProvider service
+ *  intersection at line 193). */
+function nxServiceLabelsForCategory(catKey) {
+  return nxServicesForCategory(catKey).map(o => o.value);
+}
+
+/** Pick the first non-disabled service in a category. Used to seed
+ *  FORM_STATE.service so we never default-select a Coming-Soon row. */
+function nxFirstAvailableService(catKey) {
+  const list = nxServicesForCategory(catKey);
+  const firstOpen = list.find(o => !o.disabled);
+  return (firstOpen || list[0] || { value: "General Service" }).value;
 }
 
 /** Services where the anonymous-broadcast toggle defaults to ON.
@@ -143,14 +193,19 @@ window.Views.CustomerBroadcast = {
     const catKey = (params && params[0]) || "beauty";
     const targetProviderId = (params && params[1]) ? parseInt(params[1], 10) : null;
     const catLabel = nxCategoryLabel(catKey);
+    // services is an array of { value, label, disabled?, disabledReason? }
     let services = nxServicesForCategory(catKey);
 
+    // Default service must be a NON-disabled row, otherwise the user
+    // would land on the form with a Coming Soon row pre-picked and the
+    // submit would 400. nxFirstAvailableService guarantees this.
+    const defaultService = nxFirstAvailableService(catKey);
     // Verification floor — for high-trust categories, default to ID-verified
     // (cannot be "any"). For the rest, default "any" (fastest response).
-    const isHighTrust = nxIsHighTrust(catKey, services[0]);
+    const isHighTrust = nxIsHighTrust(catKey, defaultService);
     FORM_STATE = {
       catKey,
-      service: services[0],
+      service: defaultService,
       timeframeKey: "within_1h",
       timeLabel: "As soon as possible",
       scheduledAt: null,  // Date, if user picked a specific future date/time
@@ -163,7 +218,7 @@ window.Views.CustomerBroadcast = {
       // Anonymous toggle defaults ON for a small set of privacy-sensitive
       // services (see NX_ANON_DEFAULT_SERVICES); OFF for everything else.
       // Always editable on the form — this just sets the initial state.
-      isAnonymous: nxServiceDefaultsAnon(services[0]),
+      isAnonymous: nxServiceDefaultsAnon(defaultService),
       // Optional pseudonym shown to providers in place of "Customer #<id>"
       // when isAnonymous is true. Pre-fills from the user's profile-level
       // nickname (window.state.currentUser.nickname) so the customer
@@ -190,8 +245,15 @@ window.Views.CustomerBroadcast = {
         FORM_STATE.targetProviderName = p.business_name || p.full_name || "this provider";
         const offered = Array.isArray(p.services) ? p.services : [];
         if (offered.length) {
-          services = offered;
-          FORM_STATE.service = offered[0];
+          // Re-shape into option-objects, preserving any disabled flag from
+          // the full taxonomy so a provider who legacy-offered a now-disabled
+          // service can't bypass the gate.
+          const fullByLabel = new Map(
+            nxServicesForCategory(catKey).map(o => [o.value, o])
+          );
+          services = offered.map(label => fullByLabel.get(label) || { value: label, label });
+          const firstOpen = services.find(o => !o.disabled) || services[0];
+          FORM_STATE.service = firstOpen.value;
         }
       } catch (_) {
         // If the fetch fails, fall back to showing the full category list (the
@@ -369,7 +431,10 @@ window.Views.CustomerBroadcast = {
       });
     }
 
-    // Service picker — in-app bottom sheet
+    // Service picker — in-app bottom sheet. nxSheet renders any
+    // option with `disabled: true` as greyed-out + Coming Soon badge;
+    // tapping it surfaces the per-subcategory reason inline and the
+    // sheet stays open so the customer can pick a different row.
     document.getElementById("row-service").addEventListener("click", async () => {
       const picked = await window.nxSheet({
         title: "What service?",

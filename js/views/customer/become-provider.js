@@ -80,11 +80,26 @@ window.Views.BecomeProvider = {
     let selectedSubs = [];
     let selectedServiceNames = [];
 
+    // v1.3.5 — Hard list of disabled (Coming Soon) subcategories,
+    // mirrored from the backend DISABLED_SUBCATEGORIES set. Used to
+    // filter both the sub picker and the auto-pre-select on category
+    // pick so a provider never ends up "offering" a locked service.
+    const NX_DISABLED_SUBS = new Set([
+      "home_repair/plumbing",
+      "home_repair/electrical",
+      "home_repair/hvac",
+      "home_repair/roofing",
+      "automotive/mobile_mechanic",
+    ]);
+    const isSubDisabled = (catKey, subKey) =>
+      NX_DISABLED_SUBS.has(`${catKey}/${subKey}`);
+
     const servicesFromSubs = (catKey, subKeys) => {
       const cat = (window.SERVICES_TAXONOMY || {})[catKey];
       if (!cat) return [];
       const list = [];
       subKeys.forEach(k => {
+        if (isSubDisabled(catKey, k)) return;  // never expose Coming Soon services
         const sub = (cat.subcategories || {})[k];
         if (sub && sub.services) list.push(...sub.services);
       });
@@ -95,7 +110,8 @@ window.Views.BecomeProvider = {
       const el = document.getElementById("bp-val-subs");
       if (!el) return;
       if (!selectedCategory) { el.textContent = "Pick a category first"; return; }
-      const total = Object.keys((window.SERVICES_TAXONOMY[selectedCategory] || {}).subcategories || {}).length;
+      const total = Object.keys((window.SERVICES_TAXONOMY[selectedCategory] || {}).subcategories || {})
+        .filter(k => !isSubDisabled(selectedCategory, k)).length;
       if (!selectedSubs.length) el.textContent = "Pick services";
       else if (selectedSubs.length === total) el.textContent = "All service types";
       else el.textContent = `${selectedSubs.length} of ${total} selected`;
@@ -120,7 +136,11 @@ window.Views.BecomeProvider = {
       selectedCategory = picked;
       const cat = window.SERVICES_TAXONOMY[picked];
       document.getElementById("bp-val-category").textContent = cat.label || picked;
-      const subKeys = Object.keys(cat.subcategories || {});
+      // Pre-select all NON-disabled subs (Coming Soon ones never get
+      // auto-included even if the provider taps Save without opening
+      // the sub picker).
+      const subKeys = Object.keys(cat.subcategories || {})
+        .filter(k => !isSubDisabled(picked, k));
       selectedSubs = subKeys.slice();
       selectedServiceNames = servicesFromSubs(picked, selectedSubs);
       document.getElementById("bp-row-subs").style.display = "";
@@ -133,11 +153,24 @@ window.Views.BecomeProvider = {
     document.getElementById("bp-row-subs").addEventListener("click", async () => {
       if (!selectedCategory) return;
       const cat = window.SERVICES_TAXONOMY[selectedCategory];
-      const subOptions = Object.entries(cat.subcategories || {}).map(([k, v]) => ({
-        value: k,
-        label: v.label || k,
-        sub: (v.services || []).slice(0, 3).join(", ") + ((v.services || []).length > 3 ? "…" : ""),
-      }));
+      // v1.3.5 — Filter out Coming-Soon subcategories so providers
+      // cannot register to offer plumbing/electrical/HVAC/roofing/
+      // mobile_mechanic until license verification ships. Mirrors the
+      // backend DISABLED_SUBCATEGORIES set.
+      const disabledSubs = new Set([
+        "home_repair/plumbing",
+        "home_repair/electrical",
+        "home_repair/hvac",
+        "home_repair/roofing",
+        "automotive/mobile_mechanic",
+      ]);
+      const subOptions = Object.entries(cat.subcategories || {})
+        .filter(([k]) => !disabledSubs.has(`${selectedCategory}/${k}`))
+        .map(([k, v]) => ({
+          value: k,
+          label: v.label || k,
+          sub: (v.services || []).slice(0, 3).join(", ") + ((v.services || []).length > 3 ? "…" : ""),
+        }));
       const picked = await window.nxMultiSheet({
         title: "What service types do you offer?",
         hint: "All are pre-selected. Uncheck what you don't do.",

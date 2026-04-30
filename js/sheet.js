@@ -9,7 +9,12 @@
  *
  * @param {object} opts
  *   title        — string, header text
- *   options      — array of { value, label, sub? } OR plain strings
+ *   options      — array of { value, label, sub?, disabled?, disabledReason? }
+ *                  OR plain strings. When `disabled: true`, the row is
+ *                  rendered greyed-out with a "Coming soon" badge; tapping
+ *                  it does NOT close the sheet — instead it surfaces the
+ *                  `disabledReason` as an inline banner so the user can
+ *                  pick a different option without losing context.
  *   selectedValue — value to pre-highlight
  *   cancelLabel  — default "Cancel"
  * @returns Promise<any|null> resolved with the chosen `value`, or null if cancelled.
@@ -26,11 +31,21 @@ window.nxSheet = function (opts) {
 
     const rowsHtml = options.map((o, i) => {
       const sel = o.value === selected ? " nx-sheet__row--selected" : "";
+      const dis = o.disabled ? " nx-sheet__row--disabled" : "";
       const sub = o.sub ? `<span class="nx-sheet__sub">${window.esc(o.sub)}</span>` : "";
+      const badge = o.disabled
+        ? `<span style="margin-left:8px; padding:2px 8px; border-radius:999px; background:#3a2a0a; color:#f0b400; font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;">Coming soon</span>`
+        : "";
+      const labelStyle = o.disabled
+        ? ' style="color:#6b6b6b; text-decoration:line-through; text-decoration-color:#3a3a3a;"'
+        : "";
+      const checkSpan = o.disabled
+        ? `<span aria-hidden="true">⏳</span>`
+        : `<span class="nx-sheet__check">✓</span>`;
       return `
-        <button type="button" class="nx-sheet__row${sel}" data-idx="${i}">
-          <span>${window.esc(o.label)}${sub}</span>
-          <span class="nx-sheet__check">✓</span>
+        <button type="button" class="nx-sheet__row${sel}${dis}" data-idx="${i}">
+          <span><span${labelStyle}>${window.esc(o.label)}</span>${badge}${sub}</span>
+          ${checkSpan}
         </button>`;
     }).join("");
 
@@ -38,6 +53,7 @@ window.nxSheet = function (opts) {
       <div class="nx-sheet" role="dialog" aria-modal="true">
         <div class="nx-sheet__grab" aria-hidden="true"></div>
         <h3 class="nx-sheet__title">${window.esc(opts.title || "Choose")}</h3>
+        <div id="nx-sheet-disabled-banner" style="display:none; margin:0 16px 10px; padding:12px 14px; background:#2a1a0a; border:1px solid #f0b400; border-radius:12px; color:#f0b400; font-size:12px; line-height:1.5;"></div>
         <div class="nx-sheet__list">${rowsHtml}</div>
         <button type="button" class="nx-sheet__cancel" data-cancel>${window.esc(opts.cancelLabel || "Cancel")}</button>
       </div>`;
@@ -55,7 +71,18 @@ window.nxSheet = function (opts) {
       if (e.target === overlay) return close(null);
       if (e.target.closest("[data-cancel]")) return close(null);
       const row = e.target.closest(".nx-sheet__row");
-      if (row) close(options[parseInt(row.dataset.idx, 10)].value);
+      if (!row) return;
+      const opt = options[parseInt(row.dataset.idx, 10)];
+      if (opt && opt.disabled) {
+        // Don't close — show the reason inline so the user can pick another row.
+        const banner = document.getElementById("nx-sheet-disabled-banner");
+        if (banner) {
+          banner.textContent = opt.disabledReason || "This option isn't available yet.";
+          banner.style.display = "block";
+        }
+        return;
+      }
+      close(opt.value);
     });
 
     // Esc key to cancel
