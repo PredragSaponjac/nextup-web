@@ -81,9 +81,15 @@ window.Views.ProviderVerifyId = {
             ID verification is currently complimentary while we're in early launch. Future automated verification will be paid by providers (~$5 ID check + $30 background check, US only). Verification is always optional unless you offer childcare, senior care, or specialty wellness.
           </div>
         </div>
-        <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:18px;">
+        <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:14px;">
           <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.6;">
             <strong style="color:var(--nx-text);">What works:</strong> driver's license, state ID, or passport. The whole document must be visible — all four corners, no glare, no fingers covering text.
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:14px 16px; margin-bottom:18px;">
+          <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5;">
+            <strong style="color:var(--nx-text);">For businesses:</strong> ID verification confirms the person registered on this account (typically the owner). For businesses with multiple staff, this verifies the owner only — each staff member is subject to your business's own hiring practices and any applicable professional licenses (e.g. cosmetology, massage therapy, daycare). Business-level verification is coming in a future update.
           </div>
         </div>
 
