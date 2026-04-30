@@ -175,6 +175,53 @@ window.nxOpenExternal = async function (url) {
   window.location.href = url;
 };
 
+// --------------- Legal pages — open in Browser plugin -----------------
+// v1.3.14 — Capacitor's iOS WKWebView has scrollEnabled:false (so the
+// SPA's custom nx-screen scroll containers don't double-scroll). Side
+// effect: static HTML pages like terms.html / privacy.html that rely
+// on default window scroll DON'T scroll on iOS — finger swipes are
+// completely frozen. Fix: hijack clicks on <a href="terms.html"> and
+// <a href="privacy.html"> globally and route them through Capacitor
+// Browser plugin (in-app Safari) where native scroll works perfectly.
+// On web, opens in a new tab. Works regardless of which screen the
+// link is on (auth, profile, verify-id, etc.) since this is a
+// document-level event delegate.
+(function attachLegalLinkInterceptor() {
+  if (typeof document === "undefined") return;
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest("a");
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    // Match relative or absolute links to terms.html / privacy.html.
+    // Avoid matching mailto:, tel:, hash links, etc.
+    if (!/(?:^|\/)(terms|privacy)\.html(?:[?#]|$)/.test(href)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Resolve to the PUBLIC https URL on iOS / Android. Inside
+    // Capacitor the page URL is "capacitor://localhost/" which is
+    // not a valid URL for Safari to open. Always point Browser
+    // plugin at https://app.nextupservices.com/{terms,privacy}.html
+    // so iOS Safari can render and scroll it natively.
+    var isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    var fileName = href.replace(/.*\//, "").replace(/[?#].*/, "");  // "terms.html"
+    var absUrl;
+    if (isNative) {
+      absUrl = "https://app.nextupservices.com/" + fileName;
+    } else {
+      try {
+        absUrl = new URL(href, window.location.href).toString();
+      } catch (_) {
+        absUrl = href;
+      }
+    }
+    if (window.nxOpenExternal) {
+      window.nxOpenExternal(absUrl);
+    } else {
+      window.open(absUrl, "_blank") || (window.location.href = absUrl);
+    }
+  }, true);  // capture phase so we beat any in-handler navigation
+})();
+
 // --------------- Shared swipe-to-hide for messages thread list ---------
 // Used by both customer/messages.js and provider/messages.js. Each thread
 // row is a .nx-swipe with a .nx-swipe__card child and a Hide button behind.
