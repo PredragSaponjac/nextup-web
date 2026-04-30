@@ -113,12 +113,18 @@ window.Views.ProviderVerifyId = {
             </ul>
           </div>
 
+          <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:14px 16px; margin-bottom:18px;">
+            <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5;">
+              <strong style="color:var(--nx-text);">For businesses:</strong> ID verification confirms the registered account-holder (typically the owner). It does NOT extend to employees, sub-contractors, or anyone else you dispatch. You remain fully responsible for hiring, screening, training, supervising, and insuring your team.
+            </div>
+          </div>
+
           <button class="nx-cta" id="vid-go" type="button" style="background:#22c55e; color:#000; font-weight:600;">
             ${isResume ? "Continue verification ›" : `Pay $${fee.toFixed(2)} & verify ›`}
           </button>
 
           <div style="font-size:11px; color:var(--nx-text-muted); margin-top:12px; text-align:center;">
-            ID verification confirms identity, not background. By continuing you agree to our <a href="terms.html" style="color:#22c55e;">Terms</a>.
+            ID verification confirms identity, not background. By continuing you agree to our <a href="terms.html" style="color:#22c55e;">Terms</a> &middot; <a href="privacy.html" style="color:#22c55e;">Privacy</a>.
           </div>
 
           <div id="vid-err" style="display:none; color:#ef4444; font-size:13px; margin-top:14px; text-align:center;"></div>

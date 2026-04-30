@@ -103,6 +103,20 @@ window.Views.CustomerProfile = {
               </div>
             </div>
 
+            <a href="terms.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+              <div class="nx-form__label">Terms of Service</div>
+              <div class="nx-form__value">
+                <span class="nx-form__chev">›</span>
+              </div>
+            </a>
+
+            <a href="privacy.html" class="nx-form__row" style="cursor:pointer; text-decoration:none; color:inherit;">
+              <div class="nx-form__label">Privacy Policy</div>
+              <div class="nx-form__value">
+                <span class="nx-form__chev">›</span>
+              </div>
+            </a>
+
             <div class="nx-form__row" style="cursor:default;">
               <div class="nx-form__label">App version</div>
               <div class="nx-form__value">

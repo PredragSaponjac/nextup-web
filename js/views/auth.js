@@ -37,6 +37,9 @@ window.Views.Auth = {
           <div style="text-align:center; padding:10px 0 18px; font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">
             New here? <span class="link-inline" id="go-register">Create an account</span>
           </div>
+          <div style="text-align:center; padding:6px 16px 18px; font-family:var(--nx-font-sans); font-size:11.5px; color:var(--nx-text-muted); line-height:1.6;">
+            By signing in you agree to our <a href="terms.html" style="color:var(--nx-text-muted); text-decoration:underline;">Terms of Service</a> &middot; <a href="privacy.html" style="color:var(--nx-text-muted); text-decoration:underline;">Privacy Policy</a>
+          </div>
         </div>
       </div>
     `);
@@ -189,6 +192,10 @@ window.Views.Auth = {
             </div>
             <div id="reg-error" style="display:none; color:#ef4444; font-size:13px; margin-top:14px;"></div>
             <button type="submit" class="nx-cta" id="submit-btn">${isProvider ? "Start 3 Months Free" : "Create Account"}</button>
+            <div style="text-align:center; padding:14px 4px 0; font-family:var(--nx-font-sans); font-size:11.5px; color:var(--nx-text-muted); line-height:1.6;">
+              By creating an account you agree to NextUp's<br>
+              <a href="terms.html" style="color:var(--nx-text-muted); text-decoration:underline;">Terms of Service</a> &middot; <a href="privacy.html" style="color:var(--nx-text-muted); text-decoration:underline;">Privacy Policy</a>
+            </div>
           </form>
 
           <div style="text-align:center; padding:18px 0; font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">
