@@ -71,37 +71,53 @@ window.Views.Auth = {
       window.navigate("forgot-password");
     });
 
-    // v1.3.22 — Face ID sign-in button (only present if creds saved)
+    // v1.3.22/.23 — Face ID sign-in button (only present if creds saved)
     const faceIdBtn = document.getElementById("face-id-signin-btn");
     if (faceIdBtn) {
+      const origText = faceIdBtn.textContent;
+      const restoreBtn = () => { faceIdBtn.disabled = false; faceIdBtn.textContent = origText; };
+      const hideBtnAndShowError = (msg) => {
+        restoreBtn();
+        faceIdBtn.style.display = "none";
+        const errEl2 = document.getElementById("login-error");
+        if (errEl2) {
+          errEl2.textContent = msg;
+          errEl2.style.display = "block";
+        }
+      };
       faceIdBtn.addEventListener("click", async () => {
         faceIdBtn.disabled = true;
-        const origText = faceIdBtn.textContent;
         faceIdBtn.textContent = "Authenticating…";
         try {
-          const creds = await window.nxBiometricLoadCredentials();
-          if (!creds || !creds.token) {
-            // User cancelled Face ID, or biometric failed
-            faceIdBtn.disabled = false;
-            faceIdBtn.textContent = origText;
+          const result = await window.nxBiometricLoadCredentials();
+          // v1.3.23 — handle each error path explicitly with helpful UX
+          if (result && result.error === "cancelled") {
+            // User cancelled Face ID prompt — silent, just restore button
+            restoreBtn();
             return;
           }
-          // Validate the saved token still works server-side
-          window.persistToken(creds.token);
+          if (result && result.error === "missing") {
+            // Keychain has no creds (app reinstall, restore, etc.). The
+            // helper already wiped the flag, so the button won't show
+            // next time. Hide it now too.
+            hideBtnAndShowError("Face ID isn't set up yet on this device. Please sign in with your password to enable it.");
+            return;
+          }
+          if (result && result.error) {
+            // "unavailable" or "failed" — show generic message + restore
+            hideBtnAndShowError("Couldn't access Face ID. Please sign in with your password.");
+            return;
+          }
+          // Success path: validate the saved token still works
+          window.persistToken(result.token);
           let me;
           try {
             me = await window.apiMe();
           } catch (apiErr) {
             // Token expired (or invalid) — wipe stale creds + fall back
-            // to password login. Show a friendly message.
             await window.nxBiometricDeleteCredentials();
             window.clearSession && window.clearSession();
-            faceIdBtn.style.display = "none";
-            const errEl2 = document.getElementById("login-error");
-            if (errEl2) {
-              errEl2.textContent = "Saved Face ID session expired. Please sign in with your password.";
-              errEl2.style.display = "block";
-            }
+            hideBtnAndShowError("Your saved session expired. Please sign in with your password.");
             return;
           }
           window.persistUser(me);
@@ -113,8 +129,7 @@ window.Views.Auth = {
           window.nxPushRegister && window.nxPushRegister();
           window.navigate(mode === "provider" ? "dashboard" : "home");
         } catch (ex) {
-          faceIdBtn.disabled = false;
-          faceIdBtn.textContent = origText;
+          restoreBtn();
         }
       });
     }

@@ -103,7 +103,11 @@ const NX_BIO_CREDS_SERVER = "com.nextupservices.app";
 
 /** After a successful password login, store {email, token} in
  *  Keychain so future sign-ins can skip the password. Returns true
- *  on success, false if biometric isn't available or save fails. */
+ *  on success, false if biometric isn't available or save fails.
+ *  v1.3.23 — atomic: flag is ONLY set if Keychain save succeeded.
+ *  Also defensively clears the flag if save fails, so we never end
+ *  up in a state where flag says "we have creds" but Keychain is
+ *  empty. */
 window.nxBiometricSaveCredentials = async function (email, token) {
   if (!(await window.nxBiometricAvailable())) return false;
   if (!email || !token) return false;
@@ -114,11 +118,15 @@ window.nxBiometricSaveCredentials = async function (email, token) {
       password: token,
       server: NX_BIO_CREDS_SERVER,
     });
-    if (window._store) window._store.setItem(NX_BIO_CREDS_FLAG, "1");
-    return true;
   } catch (e) {
+    // Save failed — make sure the flag is OFF so the login screen
+    // doesn't render a Face ID button that won't actually work.
+    if (window._store) window._store.removeItem(NX_BIO_CREDS_FLAG);
     return false;
   }
+  // Flag goes on AFTER Keychain save succeeded.
+  if (window._store) window._store.setItem(NX_BIO_CREDS_FLAG, "1");
+  return true;
 };
 
 /** Light synchronous check: do we have Face ID creds saved? Used by
@@ -130,25 +138,47 @@ window.nxBiometricHasSavedCredentials = function () {
   return window._store.getItem(NX_BIO_CREDS_FLAG) === "1";
 };
 
-/** Trigger Face ID, then retrieve {username, password} from Keychain.
- *  Returns null on cancel, biometric failure, or missing creds. */
+/** Trigger Face ID, then retrieve {email, token} from Keychain.
+ *  Returns one of:
+ *   - {email, token}                       on full success
+ *   - {error: "cancelled"}                 if user cancelled Face ID
+ *   - {error: "missing"}                   if Keychain has no creds
+ *                                          (e.g. app reinstall, factory
+ *                                          reset). Also wipes the local
+ *                                          flag so the button stops
+ *                                          rendering on next login.
+ *   - {error: "failed"}                    other plugin failure
+ *  v1.3.23 — return structured error rather than null so the caller
+ *  can render a useful message and self-clean stale state. */
 window.nxBiometricLoadCredentials = async function () {
-  if (!(await window.nxBiometricAvailable())) return null;
+  if (!(await window.nxBiometricAvailable())) return { error: "unavailable" };
   const Bio = window.Capacitor.Plugins.NativeBiometric;
   try {
-    // Verify Face ID first. The setCredentials call doesn't auto-gate
-    // getCredentials on iOS — we have to verifyIdentity ourselves.
+    // Step 1: Face ID prompt. Plugin docs: code 10/16 = user cancelled.
     await Bio.verifyIdentity({
       reason: "Sign in to NextUp",
       title: "NextUp",
       subtitle: "Use Face ID to sign in",
       description: "Quickly and securely sign in to NextUp",
     });
+  } catch (e) {
+    return { error: "cancelled" };
+  }
+  try {
+    // Step 2: Keychain read. If creds aren't there (app reinstall,
+    // restore from backup, etc.), self-heal by wiping our local flag
+    // so the button doesn't keep showing.
     const creds = await Bio.getCredentials({ server: NX_BIO_CREDS_SERVER });
-    if (!creds || !creds.username || !creds.password) return null;
+    if (!creds || !creds.username || !creds.password) {
+      if (window._store) window._store.removeItem(NX_BIO_CREDS_FLAG);
+      return { error: "missing" };
+    }
     return { email: creds.username, token: creds.password };
   } catch (e) {
-    return null;
+    // Keychain access failed — wipe flag to avoid a stale-button
+    // loop where user keeps tapping a button that can't work.
+    if (window._store) window._store.removeItem(NX_BIO_CREDS_FLAG);
+    return { error: "failed" };
   }
 };
 
