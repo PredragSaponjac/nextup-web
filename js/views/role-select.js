@@ -30,13 +30,13 @@ window.Views.RoleSelect = {
           <div class="nx-role-cards">
             <button class="nx-role-card" id="role-customer" type="button">
               <div class="nx-role-card__title">I need a service</div>
-              <div class="nx-role-card__sub">Broadcast your request — nearby providers respond in minutes.</div>
+              <div class="nx-role-card__sub">Broadcast your request — nearby providers respond in minutes. <strong style="color:#22c55e;">Free for customers.</strong></div>
               <div class="nx-role-card__arrow">›</div>
             </button>
 
             <button class="nx-role-card" id="role-provider" type="button">
               <div class="nx-role-card__title">I'm a provider</div>
-              <div class="nx-role-card__sub">Get matched with customers nearby. 3 months free.</div>
+              <div class="nx-role-card__sub">Get matched with customers nearby. <strong style="color:#22c55e;">3 months free</strong>, then $19/month · Zero commission · Cancel anytime.</div>
               <div class="nx-role-card__arrow">›</div>
             </button>
           </div>

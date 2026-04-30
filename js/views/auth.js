@@ -89,7 +89,7 @@ window.Views.Auth = {
     const isProvider = role === "provider";
     const title = isProvider ? "Become a Provider" : "Create Account";
     const subHeadline = isProvider ? "Get matched with customers nearby." : "Find nearby providers.";
-    const subSubline = isProvider ? "3 months free, then $19/month. Cancel anytime." : "Broadcast your request in seconds.";
+    const subSubline = isProvider ? "3 months free · then $19/month · Zero commission" : "Broadcast your request in seconds.";
 
     // Build category options for provider — pulled from the taxonomy
     const catKeys = Object.keys(window.SERVICES_TAXONOMY || {});

@@ -43,5 +43,5 @@ window.NEXTUP_CONFIG = {
   },
 
   // App version
-  VERSION: "1.1.6",
+  VERSION: "1.1.7",
 };

@@ -22,7 +22,15 @@ window.Views.BecomeProvider = {
 
           <div style="text-align:center; padding:12px 0 24px;">
             <div style="font-family:var(--nx-font-serif); font-style:italic; font-size:26px; color:var(--nx-text); margin-bottom:6px;">Offer your service.</div>
-            <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted);">Same login — flip to provider mode anytime. 3 months free.</div>
+            <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); max-width:320px; margin:0 auto;">Same login — flip to provider mode anytime.</div>
+          </div>
+
+          <!-- Pricing strip — visible BEFORE the form so providers know what they're signing up for -->
+          <div style="margin:0 0 22px; padding:14px 16px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; text-align:center;">
+            <div style="font-family:var(--nx-font-sans); font-size:14px; color:#22c55e; font-weight:600; margin-bottom:4px;">3 months free · then $19/month</div>
+            <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5;">
+              Zero commission on bookings · Cancel anytime · No card required to start
+            </div>
           </div>
 
           <form id="bp-form" class="nx-form">
