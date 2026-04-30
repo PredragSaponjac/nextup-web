@@ -243,6 +243,10 @@ window.Views.CustomerResponses = {
     const miles = r.distance_miles != null ? `${Number(r.distance_miles).toFixed(1)} mi` : null;
     const avail = r.available_time || "Now";
     const price = r.price != null ? `$${Math.round(r.price)}` : null;
+    const idVerified = r.id_verification_status === "verified";
+    const verifiedBadge = idVerified
+      ? `<span style="display:inline-block; margin-left:6px; padding:2px 7px; background:rgba(34,197,94,0.12); color:#22c55e; font-size:10px; font-weight:600; border-radius:999px; vertical-align:middle;" aria-label="ID Verified">✓ ID</span>`
+      : ``;
 
     const parts = [ratingDisplay];
     if (miles) parts.push(`<span>${window.esc(miles)}</span>`);
@@ -252,7 +256,7 @@ window.Views.CustomerResponses = {
 
     return `
       <div class="nx-respcard">
-        <h3 class="nx-respcard__name">${window.esc(providerName)}</h3>
+        <h3 class="nx-respcard__name">${window.esc(providerName)}${verifiedBadge}</h3>
         <div class="nx-respcard__row">
           <div class="nx-respcard__meta">${meta}</div>
           <button class="nx-bookbtn" data-book="${r.id}">Book</button>

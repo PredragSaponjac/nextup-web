@@ -36,6 +36,7 @@ const ROUTES = [
   { match: "p-messages",    view: "ProviderMessages",  auth: "required", role: "provider" },
   { match: "p-profile",     view: "ProviderProfile",   auth: "required", role: "provider" },
   { match: "billing",       view: "ProviderBilling",   auth: "required", role: "provider" },
+  { match: "verify-id",     view: "ProviderVerifyId",  auth: "required", role: "provider" },
 ];
 
 /** Parse current hash into { name, params }. */

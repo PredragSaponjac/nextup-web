@@ -83,6 +83,35 @@ window.Views.ProviderProfile = {
 
             <button class="nx-cta" id="edit-btn" type="button" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); margin-top:18px;">Edit profile</button>
 
+            ${(() => {
+              const status = (profile && profile.id_verification_status) || "none";
+              if (status === "verified") {
+                return `<div class="nx-form__row" style="cursor:default; margin-top:14px;">
+                  <div class="nx-form__label">ID Verification</div>
+                  <div class="nx-form__value"><span style="color:#22c55e;">\u2713 Verified</span></div>
+                </div>`;
+              }
+              if (status === "pending") {
+                return `<div class="nx-form__row" style="cursor:default; margin-top:14px;">
+                  <div class="nx-form__label">ID Verification</div>
+                  <div class="nx-form__value"><span style="color:var(--nx-text-muted);">In review (~24h)</span></div>
+                </div>`;
+              }
+              const isReject = status === "rejected";
+              const reason = (profile && profile.id_rejection_reason) || "";
+              return `<div style="margin-top:14px; padding:14px 16px; background:${isReject ? "#2a1a1a" : "#1a1a1a"}; border:1px solid ${isReject ? "#ef4444" : "#f0b400"}; border-radius:14px;">
+                <div style="font-family:var(--nx-font-sans); font-size:14px; font-weight:600; color:${isReject ? "#ef4444" : "#f0b400"}; margin-bottom:4px;">
+                  ${isReject ? "ID verification rejected" : "Get ID verified"}
+                </div>
+                <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:10px;">
+                  ${isReject ? window.esc(reason || "Photos didn't pass review. Try again with a clearer ID and selfie.") : "Required to respond to childcare, senior care, and specialty wellness requests. Upload your government ID and a selfie \u2014 review takes about a day."}
+                </div>
+                <button class="nx-cta" id="bp-verify-id-btn" type="button" style="background:${isReject ? "#ef4444" : "#f0b400"}; color:#000; font-weight:600; padding:10px 16px; min-height:auto; width:auto; display:inline-block;">
+                  ${isReject ? "Try again" : "Start verification"}
+                </button>
+              </div>`;
+            })()}
+
             <div class="nx-form__row" id="row-billing" style="cursor:pointer; margin-top:14px;">
               <div class="nx-form__label">Billing</div>
               <div class="nx-form__value">
@@ -200,6 +229,12 @@ window.Views.ProviderProfile = {
         chev.textContent = turningOn ? "\u25cf" : "\u25cb";
         chev.style.color = turningOn ? "#22c55e" : "";
       });
+    }
+
+    // ---- ID Verification CTA (when not verified) ----
+    const verifyBtn = document.getElementById("bp-verify-id-btn");
+    if (verifyBtn) {
+      verifyBtn.addEventListener("click", () => window.navigate("verify-id"));
     }
 
     // ---- Billing ----
