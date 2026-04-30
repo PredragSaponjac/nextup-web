@@ -197,23 +197,28 @@ window.Views.CustomerResponses = {
         <div id="nx-expand-card" style="background:#1a1a1a; border:1px solid #44403c; border-radius:14px; padding:16px 18px; margin:14px 16px;">
           <div style="font-family:var(--nx-font-sans); font-size:14px; font-weight:600; color:var(--nx-text); margin-bottom:6px;">🕐 Still no responses</div>
           <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:10px;">
-            You're already at the widest search (50 mi, tomorrow). Providers may not be online right now
-            in your area. You can keep this request open — new providers joining today may still respond.
+            You're already at the widest search — <strong style="color:var(--nx-text);">Tomorrow</strong>
+            with a 50 mi radius. Providers may not be online right now in your area. You can keep this
+            request open — new providers joining today may still respond.
           </div>
           <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); width:100%;">Keep waiting</button>
         </div>
       `;
     }
 
+    // v1.3.17 — lead with TIME (what customers actually think in),
+    // show miles as secondary detail. The single "Expand" action
+    // bumps both the timeframe AND the search radius, but we make
+    // sure the customer sees the time change first since that's the
+    // commitment they care about ("am I willing to wait longer?").
     return `
       <div id="nx-expand-card" style="background:#1a1a1a; border:1px solid #44403c; border-radius:14px; padding:16px 18px; margin:14px 16px;">
-        <div style="font-family:var(--nx-font-sans); font-size:14px; font-weight:600; color:var(--nx-text); margin-bottom:6px;">🕐 No responses yet — want to expand?</div>
+        <div style="font-family:var(--nx-font-sans); font-size:14px; font-weight:600; color:var(--nx-text); margin-bottom:6px;">🕐 No responses yet</div>
         <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:12px;">
-          Since we're still growing, try widening to <strong style="color:#f0b400;">${window.esc(TF_LABEL[nextTf])}</strong>
-          (${nextRadius} mi radius). We'll notify any additional providers now in range.
+          Pick a longer time window and we'll automatically search a <strong style="color:var(--nx-text);">wider radius</strong> — more providers within reach get notified. You choose how far to stretch.
         </div>
         <div style="display:flex; gap:8px;">
-          <button id="nx-expand-btn" type="button" class="nx-bookbtn" style="flex:1;">Expand to ${nextRadius} mi</button>
+          <button id="nx-expand-btn" type="button" class="nx-bookbtn" style="flex:1;">Expand search ›</button>
           <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="flex:1; background:transparent; border:1px solid var(--nx-border); color:var(--nx-text);">Keep waiting</button>
         </div>
       </div>
@@ -221,15 +226,41 @@ window.Views.CustomerResponses = {
   },
 
   async _expand(currentTf) {
+    // v1.3.17 - picker UX. Show available time options as a bottom
+    // sheet; customer picks how far to stretch in one tap. Each
+    // option lists its associated search radius so the cascade
+    // (more time -> wider radius -> more providers) is visible at
+    // the moment of choice.
+    const i = TF_ORDER.indexOf(currentTf);
+    if (i < 0 || i >= TF_ORDER.length - 1) return;
+    const options = TF_ORDER.slice(i + 1).map(tf => ({
+      value: tf,
+      label: TF_LABEL[tf],
+      sub: "Searches up to " + TF_RADIUS[tf] + " mi",
+    }));
+    const picked = await window.nxSheet({
+      title: "Expand the search",
+      options,
+      cancelLabel: "Keep waiting",
+    });
+    if (picked == null) return;
     const btn = document.getElementById("nx-expand-btn");
     if (btn) { btn.disabled = true; btn.textContent = "Expanding…"; }
     try {
-      const res = await window.apiFetch(`/api/requests/${this.requestId}/expand-search`, { method: "POST", body: {} });
+      const res = await window.apiFetch(
+        "/api/requests/" + this.requestId + "/expand-search",
+        { method: "POST", body: { new_timeframe: picked } }
+      );
       const n = (res && res.newly_notified) || 0;
-      const r = (res && res.radius_miles) || null;
-      window.toast && window.toast(`Expanded to ${r} mi \u00b7 notified ${n} more`, "success");
+      const tfLabel = TF_LABEL[picked] || picked;
+      const r = (res && res.radius_miles) || TF_RADIUS[picked];
+      window.toast && window.toast(
+        "Expanded to " + tfLabel + " (" + r + " mi) \u00b7 " + n + " more provider" + (n === 1 ? "" : "s") + " notified",
+        "success"
+      );
     } catch (e) {
       window.nxAlert("Couldn't expand: " + (e.message || "network error"));
+      if (btn) { btn.disabled = false; btn.textContent = "Expand search \u203a"; }
     }
     await this._fetchAndRender(true);
   },
