@@ -35,7 +35,11 @@ const NX_ANON_DEFAULT_SERVICES = new Set([
 /** Categories that floor the verification level — customer cannot pick
  *  "Anyone" for these; the minimum is "ID-verified providers". Mirrors
  *  the backend HIGH_TRUST_CATEGORIES set. */
-const NX_HIGH_TRUST_CATEGORIES = new Set(["childcare", "senior_care"]);
+const NX_HIGH_TRUST_CATEGORIES = new Set(["childcare", "senior_care", "errands_delivery"]);
+// Categories that need an extra disclaimer banner on the broadcast form
+// because of liability nuances (errands carry items but NextUp doesn't
+// insure the cargo).
+const NX_ERRAND_CATEGORIES = new Set(["errands_delivery"]);
 const NX_HIGH_TRUST_SERVICES = new Set([
   "Therapeutic Touch",
   "Personal Companion",
@@ -220,6 +224,15 @@ window.Views.CustomerBroadcast = {
           </header>
 
           ${targetBanner}
+
+          ${NX_ERRAND_CATEGORIES.has(FORM_STATE.catKey) ? `
+            <div style="margin:12px 0 18px; padding:14px 16px; background:#2a1a1a; border:1px solid #f0b400; border-radius:14px;">
+              <div style="font-family:var(--nx-font-sans); font-size:13px; font-weight:600; color:#f0b400; margin-bottom:6px;">📦 NextUp doesn't insure your items</div>
+              <div style="font-family:var(--nx-font-sans); font-size:12px; color:var(--nx-text-muted); line-height:1.6;">
+                Providers are independent contractors with their own auto insurance. We require ID verification but you're responsible for choosing whom to trust. Items in transit aren't covered by NextUp. Best practice: declare items under $200, share tracking numbers via the chat, confirm pickup + drop-off in messages.
+              </div>
+            </div>
+          ` : ""}
 
           <div class="nx-form">
             <div class="nx-form__row" id="row-entity-type" style="cursor:pointer;">

@@ -762,6 +762,62 @@ const SERVICES_TAXONOMY = {
         ]
       }
     }
+  },
+
+  // v1.3.2 — Low-risk errand/courier services. Functional but heavily
+  // disclaimed: ID-verified provider required, items under $200, NextUp
+  // does not insure cargo. Provider declares auto insurance covers
+  // business use during signup.
+  errands_delivery: {
+    label: "Errands & Pickup",
+    subcategories: {
+      package: {
+        label: "Package retrieval",
+        services: [
+          "FedEx pickup",
+          "UPS pickup",
+          "USPS pickup",
+          "Amazon locker collection"
+        ]
+      },
+      store_drop: {
+        label: "Store drop-off",
+        services: [
+          "Return at retailer",
+          "Donation drop-off",
+          "Drop at recycling center"
+        ]
+      },
+      pickup: {
+        label: "Errand pickup",
+        services: [
+          "Dry cleaning pickup",
+          "Pre-paid grocery pickup",
+          "Prescription pickup (by patient's authorized contact)"
+        ]
+      },
+      courier: {
+        label: "Small item courier",
+        services: [
+          "Document courier (intra-city)",
+          "Small parcel courier (under $200 declared value)"
+        ]
+      }
+    }
+  },
+
+  // v1.3.2 — PLACEHOLDER (Coming Soon). Tile shows on Home but tap is
+  // intercepted by NX_COMING_SOON_CATEGORIES → modal. Backend rejects
+  // any broadcast attempt at this category. Will unlock when LLC +
+  // business insurance + Driver Verified verification tier are live.
+  drive_transport: {
+    label: "Drive & Transport",
+    subcategories: {
+      placeholder: {
+        label: "Coming soon",
+        services: ["(Coming soon)"]
+      }
+    }
   }
 
 };

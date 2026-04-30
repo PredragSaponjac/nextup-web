@@ -59,12 +59,20 @@ function nxIconShirt() {
   // laundry — t-shirt
   return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M14 8l-8 4 4 8 4-2v18h16V18l4 2 4-8-8-4-4 4h-8z"/></svg>`;
 }
+function nxIconErrand() {
+  // errands_delivery — package + arrow
+  return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M8 14l14-6 14 6v18l-14 6-14-6z"/><path d="M8 14l14 6 14-6"/><path d="M22 38V20"/><path d="M30 24l4 4-4 4M34 28h-8" stroke-linecap="round"/></svg>`;
+}
+function nxIconWheel() {
+  // drive_transport — steering wheel
+  return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><circle cx="22" cy="22" r="14"/><circle cx="22" cy="22" r="3" fill="currentColor"/><path d="M22 8v11M22 25v11M8 22h11M25 22h11" stroke-linecap="round"/></svg>`;
+}
 // v1.3.1 — Categories temporarily gated behind background-check rollout.
 // Tiles still appear on Home (so customers see the full vision) but tapping
 // them shows a "Coming soon" modal until automated BG checks are live.
 // Once Persona Reports is enabled and we have providers passing BG checks,
 // remove keys from this set to unlock them.
-const NX_COMING_SOON_CATEGORIES = new Set(["childcare", "senior_care"]);
+const NX_COMING_SOON_CATEGORIES = new Set(["childcare", "senior_care", "drive_transport"]);
 
 // Map backend-category key → icon fn + display label
 const NX_CATEGORY_ICONS = {
@@ -82,6 +90,8 @@ const NX_CATEGORY_ICONS = {
   tech:           nxIconWifi,
   events:         nxIconMusic,
   laundry:        nxIconShirt,
+  errands_delivery: nxIconErrand,
+  drive_transport:  nxIconWheel,
 };
 
 window.Views.CustomerHome = {
@@ -149,11 +159,15 @@ window.Views.CustomerHome = {
     document.querySelectorAll(".nx-cat").forEach(tile => {
       tile.addEventListener("click", async () => {
         if (tile.dataset.comingSoon === "1") {
-          const cat = (window.SERVICES_TAXONOMY[tile.dataset.cat] || {}).label || tile.dataset.cat;
-          await window.nxAlert(
-            `${cat} is coming soon.\n\nWe're enabling this category once our automated background check verification is live. For your safety, every provider in this category will be ID-verified AND background-checked before they can respond. Stay tuned — should be ready in the next few weeks.`,
-            { okLabel: "Got it" }
-          );
+          const catKey = tile.dataset.cat;
+          const cat = (window.SERVICES_TAXONOMY[catKey] || {}).label || catKey;
+          let body;
+          if (catKey === "drive_transport") {
+            body = `${cat} is coming soon.\n\nWe're working on drive-my-car, pet transport, designated driver, and similar transport services. These need a Driver Verified tier (clean driving record + commercial auto insurance proof) plus full background checks before launch — coming after we have our LLC and business insurance in place.`;
+          } else {
+            body = `${cat} is coming soon.\n\nWe're enabling this category once our automated background check verification is live. For your safety, every provider in this category will be ID-verified AND background-checked before they can respond. Stay tuned — should be ready in the next few weeks.`;
+          }
+          await window.nxAlert(body, { okLabel: "Got it" });
           return;
         }
         window.navigate(`broadcast/${tile.dataset.cat}`);
