@@ -11,7 +11,7 @@ window.Views.Auth = {
     // the actual Face ID prompt only fires when the user taps the
     // button. No prompt-on-render = no surprise Face ID popup.
     const hasFaceIdCreds = window.nxBiometricHasSavedCredentials && window.nxBiometricHasSavedCredentials();
-    const faceIdBtn = hasFaceIdCreds ? `
+    const faceIdBtnHtml = hasFaceIdCreds ? `
       <button type="button" id="face-id-signin-btn" class="nx-cta" style="background:#1a1a1a; border:1px solid #22c55e; color:#22c55e; margin-bottom:14px; font-weight:600;">
         🔐 Sign in with Face ID
       </button>
@@ -33,7 +33,7 @@ window.Views.Auth = {
             <div style="font-family:var(--nx-font-serif); font-style:italic; font-size:26px; color:var(--nx-text);">Welcome back</div>
           </div>
 
-          ${faceIdBtn}
+          ${faceIdBtnHtml}
 
           <form id="login-form" class="nx-form">
             <div class="nx-form__row">
