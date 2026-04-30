@@ -261,10 +261,17 @@ window.Views.ProviderVerifyId = {
       const fd = new FormData();
       fd.append("id_doc", idBlob, "id.jpg");
       fd.append("selfie", selfieBlob, "selfie.jpg");
-      // apiFetch detects FormData and skips JSON conversion
-      await window.apiFetch("/api/providers/verify-id", { method: "POST", body: fd });
+      // Mode-aware endpoint + return path: customer mode posts to the
+      // generic /api/auth/verify-id (writes to users.X), provider mode
+      // keeps the existing /api/providers/verify-id (writes to
+      // provider_profiles.X — kept for back-compat with v1.2.0 deploys
+      // already in flight; future versions will converge on /auth/).
+      const isProviderMode = window.getActiveMode && window.getActiveMode() === "provider";
+      const endpoint = isProviderMode ? "/api/providers/verify-id" : "/api/auth/verify-id";
+      const returnRoute = isProviderMode ? "p-profile" : "profile";
+      await window.apiFetch(endpoint, { method: "POST", body: fd });
       window.toast && window.toast("Submitted — we'll email you within a day.", "success");
-      window.navigate("p-profile");
+      window.navigate(returnRoute);
     } catch (ex) {
       err.textContent = ex.message || "Couldn't upload. Please try again.";
       err.style.display = "block";

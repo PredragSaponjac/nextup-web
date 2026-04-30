@@ -37,7 +37,15 @@ window.Views.ProviderDashboard = {
 
     const isOnline = !!(profile && profile.is_online);
 
-    const cards = (incoming || []).map(r => {
+    // Provider's session-level filter for verified-customer-only view.
+    // Stored in localStorage so it persists across reloads but isn't a
+    // permanent profile setting (provider can flip it on/off freely).
+    const verifiedOnly = localStorage.getItem("nx_dash_verified_only") === "1";
+    const filteredIncoming = verifiedOnly
+      ? (incoming || []).filter(r => r.customer_id_verification_status === "verified")
+      : (incoming || []);
+
+    const cards = filteredIncoming.map(r => {
       const miles = r.distance_miles != null ? `${r.distance_miles.toFixed(1)} mi` : "—";
       const timeLbl = {
         within_1h: "Within 1 hour",
@@ -48,9 +56,12 @@ window.Views.ProviderDashboard = {
       const directPill = r.is_direct
         ? `<span style="display:inline-block; margin-right:8px; padding:3px 10px; background:#fafaf9; color:#000; border-radius:999px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">Direct</span>`
         : "";
+      const verifiedPill = r.customer_id_verification_status === "verified"
+        ? `<span style="display:inline-block; margin-right:8px; padding:2px 8px; background:rgba(34,197,94,0.15); color:#22c55e; border-radius:999px; font-size:10px; font-weight:600;" aria-label="Customer is ID Verified">✓ ID</span>`
+        : "";
       return `
         <div class="nx-respcard" data-req-id="${r.id}" style="cursor:pointer; ${r.is_direct ? "border-color:#fafaf9;" : ""}">
-          <h3 class="nx-respcard__name">${directPill}${window.esc(r.service_description || "Request")}</h3>
+          <h3 class="nx-respcard__name">${directPill}${verifiedPill}${window.esc(r.service_description || "Request")}</h3>
           <div class="nx-respcard__meta" style="font-size:14px;">
             <span>${window.esc(miles)}</span>
             <span class="nx-respcard__dot">·</span>
@@ -100,8 +111,13 @@ window.Views.ProviderDashboard = {
             </div>
           </div>
 
-          <div style="font-family:var(--nx-font-sans); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--nx-text-muted); padding: 0 0 12px;">
-            Incoming requests
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0 0 12px;">
+            <div style="font-family:var(--nx-font-sans); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--nx-text-muted);">
+              Incoming requests${verifiedOnly && incoming.length ? ` (${filteredIncoming.length} of ${incoming.length})` : ""}
+            </div>
+            <button id="toggle-verified-only" type="button" style="background:transparent; border:1px solid ${verifiedOnly ? "#22c55e" : "var(--nx-border)"}; color:${verifiedOnly ? "#22c55e" : "var(--nx-text-muted)"}; font-size:11px; font-weight:600; padding:5px 10px; border-radius:999px; cursor:pointer;">
+              ${verifiedOnly ? "✓ Verified only" : "Show all"}
+            </button>
           </div>
 
           ${body}
@@ -116,6 +132,21 @@ window.Views.ProviderDashboard = {
       modeBtn.addEventListener("click", () => {
         window.setActiveMode("customer");
         window.navigate("home");
+      });
+    }
+
+    // Verified-only filter toggle (provider's session preference)
+    const verifiedOnlyBtn = document.getElementById("toggle-verified-only");
+    if (verifiedOnlyBtn) {
+      verifiedOnlyBtn.addEventListener("click", () => {
+        const cur = localStorage.getItem("nx_dash_verified_only") === "1";
+        if (cur) {
+          localStorage.removeItem("nx_dash_verified_only");
+        } else {
+          localStorage.setItem("nx_dash_verified_only", "1");
+        }
+        // Re-render dashboard with new filter applied
+        window.Views.ProviderDashboard.render();
       });
     }
 

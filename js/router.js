@@ -36,7 +36,10 @@ const ROUTES = [
   { match: "p-messages",    view: "ProviderMessages",  auth: "required", role: "provider" },
   { match: "p-profile",     view: "ProviderProfile",   auth: "required", role: "provider" },
   { match: "billing",       view: "ProviderBilling",   auth: "required", role: "provider" },
-  { match: "verify-id",     view: "ProviderVerifyId",  auth: "required", role: "provider" },
+  // verify-id is shared between customer and provider modes — the view
+  // detects activeMode and posts to the right endpoint. Role: null lets
+  // both modes route to it.
+  { match: "verify-id",     view: "ProviderVerifyId",  auth: "required", role: null },
 ];
 
 /** Parse current hash into { name, params }. */
