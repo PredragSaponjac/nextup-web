@@ -20,14 +20,17 @@
 let NX_POLL = null;
 let NX_SORT = "rating"; // rating | price | distance | speed
 
-const TF_ORDER = ["within_1h", "within_2h", "today", "tomorrow"];
+// v1.3.20 — added "asap" tier for tightest urgency (3 mi, ~30 min).
+// Buckets cascade smoothly: more time → wider radius → more providers.
+const TF_ORDER = ["asap", "within_1h", "within_2h", "today", "tomorrow"];
 const TF_LABEL = {
+  asap: "As soon as possible",
   within_1h: "Within 1 hour",
   within_2h: "Within 2 hours",
   today: "Today",
   tomorrow: "Tomorrow",
 };
-const TF_RADIUS = { within_1h: 5, within_2h: 10, today: 25, tomorrow: 50 };
+const TF_RADIUS = { asap: 3, within_1h: 5, within_2h: 10, today: 25, tomorrow: 50 };
 
 window.Views.CustomerResponses = {
   async render(params) {
@@ -141,14 +144,24 @@ window.Views.CustomerResponses = {
         });
       });
 
+      // v1.3.20 — expand card has up to 4 buttons. Wire each.
       const expandBtn = document.getElementById("nx-expand-btn");
-      if (expandBtn) expandBtn.addEventListener("click", () => this._expand(tf));
-
+      if (expandBtn) {
+        // Primary one-tap expand to next tier (auto-suggested)
+        expandBtn.addEventListener("click", () => this._expandToNext(tf));
+      }
+      const expandMoreBtn = document.getElementById("nx-expand-more");
+      if (expandMoreBtn) {
+        // Open the picker for non-default jumps
+        expandMoreBtn.addEventListener("click", () => this._expand(tf));
+      }
       const keepWaitingBtn = document.getElementById("nx-keep-waiting");
       if (keepWaitingBtn) keepWaitingBtn.addEventListener("click", () => {
         const card = document.getElementById("nx-expand-card");
         if (card) card.style.display = "none";
       });
+      const cancelBtn = document.getElementById("nx-cancel-broadcast");
+      if (cancelBtn) cancelBtn.addEventListener("click", () => this._cancelBroadcast());
 
       window.bindCustomerTabBar();
     } catch (e) {
@@ -225,25 +238,42 @@ window.Views.CustomerResponses = {
             with a 50 mi radius. Providers may not be online right now in your area. You can keep this
             request open — new providers joining today may still respond.
           </div>
-          <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); width:100%;">Keep waiting</button>
+          <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); width:100%; margin-bottom:8px;">Keep waiting</button>
+          <button id="nx-cancel-broadcast" type="button" class="nx-bookbtn" style="background:transparent; border:1px solid #ef4444; color:#ef4444; width:100%;">Cancel broadcast</button>
         </div>
       `;
     }
 
-    // v1.3.17 — lead with TIME (what customers actually think in),
-    // show miles as secondary detail. The single "Expand" action
-    // bumps both the timeframe AND the search radius, but we make
-    // sure the customer sees the time change first since that's the
-    // commitment they care about ("am I willing to wait longer?").
+    // v1.3.20 — three explicit choices when a broadcast goes 3 min
+    // with 0 responses:
+    //   (1) ONE-TAP suggested expand to next tier (primary green).
+    //       Labeled with the exact time + radius change so the
+    //       cascade is obvious.
+    //   (2) "More options ›" opens a bottom-sheet picker with all
+    //       available higher tiers (lets customer leap further in
+    //       a single tap — e.g. asap → tomorrow).
+    //   (3) "Cancel broadcast" red outlined button — clean exit.
+    // Body copy frames the cascade explicitly so customer always
+    // knows what they're agreeing to: more time = wider radius =
+    // more providers.
+    const nextLabel = TF_LABEL[nextTf];
+    const currentRadius = TF_RADIUS[currentTf];
     return `
       <div id="nx-expand-card" style="background:#1a1a1a; border:1px solid #44403c; border-radius:14px; padding:16px 18px; margin:14px 16px;">
         <div style="font-family:var(--nx-font-sans); font-size:14px; font-weight:600; color:var(--nx-text); margin-bottom:6px;">🕐 No responses yet</div>
-        <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:12px;">
-          Pick a longer time window and we'll automatically search a <strong style="color:var(--nx-text);">wider radius</strong> — more providers within reach get notified. You choose how far to stretch.
+        <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.5; margin-bottom:14px;">
+          We searched <strong style="color:var(--nx-text);">${currentRadius} mi</strong> for <strong style="color:var(--nx-text);">${window.esc(TF_LABEL[currentTf] || currentTf)}</strong>. Want to widen the search to find more providers? Each step gives more time AND a wider radius.
         </div>
+
+        <button id="nx-expand-btn" type="button" class="nx-bookbtn" style="width:100%; background:#22c55e; color:#000; font-weight:600; margin-bottom:8px;">
+          Expand to ${window.esc(nextLabel)} · ${nextRadius} mi
+        </button>
+
+        <button id="nx-expand-more" type="button" class="nx-bookbtn" style="width:100%; background:transparent; border:1px solid var(--nx-border); color:var(--nx-text); margin-bottom:8px;">More options ›</button>
+
         <div style="display:flex; gap:8px;">
-          <button id="nx-expand-btn" type="button" class="nx-bookbtn" style="flex:1;">Expand search ›</button>
-          <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="flex:1; background:transparent; border:1px solid var(--nx-border); color:var(--nx-text);">Keep waiting</button>
+          <button id="nx-keep-waiting" type="button" class="nx-bookbtn" style="flex:1; background:transparent; border:1px solid var(--nx-border); color:var(--nx-text-muted);">Keep waiting</button>
+          <button id="nx-cancel-broadcast" type="button" class="nx-bookbtn" style="flex:1; background:transparent; border:1px solid #ef4444; color:#ef4444;">Cancel broadcast</button>
         </div>
       </div>
     `;
@@ -287,6 +317,54 @@ window.Views.CustomerResponses = {
       if (btn) { btn.disabled = false; btn.textContent = "Expand search \u203a"; }
     }
     await this._fetchAndRender(true);
+  },
+
+  // v1.3.20 — One-tap expand to the NEXT tier (no picker). Used by
+  // the green "Expand to X · N mi" primary button on the expand card.
+  async _expandToNext(currentTf) {
+    const i = TF_ORDER.indexOf(currentTf);
+    if (i < 0 || i >= TF_ORDER.length - 1) return;
+    const nextTf = TF_ORDER[i + 1];
+    const btn = document.getElementById("nx-expand-btn");
+    if (btn) { btn.disabled = true; btn.textContent = "Expanding…"; }
+    try {
+      const res = await window.apiFetch(
+        "/api/requests/" + this.requestId + "/expand-search",
+        { method: "POST", body: { new_timeframe: nextTf } }
+      );
+      const n = (res && res.newly_notified) || 0;
+      const tfLabel = TF_LABEL[nextTf] || nextTf;
+      const r = (res && res.radius_miles) || TF_RADIUS[nextTf];
+      window.toast && window.toast(
+        "Expanded to " + tfLabel + " (" + r + " mi) · " + n + " more provider" + (n === 1 ? "" : "s") + " notified",
+        "success"
+      );
+    } catch (e) {
+      window.nxAlert("Couldn't expand: " + (e.message || "network error"));
+      if (btn) { btn.disabled = false; }
+    }
+    await this._fetchAndRender(true);
+  },
+
+  // v1.3.20 — Cancel the open broadcast. Asks for confirmation since
+  // this is destructive and can't be undone (the request is closed).
+  async _cancelBroadcast() {
+    const ok = await window.nxConfirm(
+      "Cancel this broadcast?\n\nNo more providers will see it. You can always create a new request anytime.",
+      { okLabel: "Cancel broadcast", cancelLabel: "Keep request open", danger: true }
+    );
+    if (!ok) return;
+    try {
+      await window.apiFetch(
+        "/api/requests/" + this.requestId + "/cancel",
+        { method: "POST", body: {} }
+      );
+      window.toast && window.toast("Broadcast cancelled", "success");
+      clearInterval(NX_POLL);
+      window.navigate("home");
+    } catch (e) {
+      window.nxAlert("Couldn't cancel: " + (e.message || "network error"));
+    }
   },
 
   _renderCard(r) {

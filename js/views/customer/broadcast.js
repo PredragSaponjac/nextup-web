@@ -169,18 +169,26 @@ function nxSubcategoryForService(catKey, serviceLabel) {
 /** Backend Timeframe enum: within_1h | within_2h | today | tomorrow.
     We give customers finer-grained options in the UI and map them to the
     nearest backend bucket. A picked date/time also uses the buckets. */
-// v1.3.20 — removed "In 15 minutes" — too aggressive in low-density
-// markets (smaller towns). 30 min is the realistic minimum that lets
-// providers actually arrive. "As soon as possible" still maps to the
-// within_1h / 5 mi bucket but conceptually means "expect within 30 min."
+// v1.3.20 — clean tier system. ASAP gets its own tight 3-mile bucket
+// so customers needing in-the-neighborhood service get only nearby
+// providers (more realistic acceptance + faster arrival). Removed the
+// confusing "In 15 minutes" + duplicate "In 30 minutes" options. Each
+// option now maps to a distinct bucket+radius pair, so the cascade
+// (more time → wider radius → more providers) is clear.
+//
+// Bucket → Radius:
+//   asap       → 3 mi   (~30 min, in-the-neighborhood)
+//   within_1h  → 5 mi   (1 hour, walking-drive radius)
+//   within_2h  → 10 mi  (2 hours, short drive)
+//   today      → 25 mi  (today, comfortable drive)
+//   tomorrow   → 50 mi  (tomorrow, regional)
 const TIMING_PRESETS = [
-  { value: "asap",      label: "As soon as possible", tf: "within_1h" },
-  { value: "in_30m",    label: "In 30 minutes",       tf: "within_1h" },
+  { value: "asap",      label: "As soon as possible", tf: "asap"     },
   { value: "in_1h",     label: "In 1 hour",           tf: "within_1h" },
   { value: "in_2h",     label: "In 2 hours",          tf: "within_2h" },
-  { value: "later_today", label: "Later today",       tf: "today" },
+  { value: "later_today", label: "Later today",       tf: "today"    },
   { value: "tomorrow",  label: "Tomorrow",            tf: "tomorrow" },
-  { value: "pick_date", label: "Pick a date & time…", tf: null },
+  { value: "pick_date", label: "Pick a date & time…", tf: null       },
 ];
 
 const GENDERS = [
@@ -209,7 +217,7 @@ window.Views.CustomerBroadcast = {
     FORM_STATE = {
       catKey,
       service: defaultService,
-      timeframeKey: "within_1h",
+      timeframeKey: "asap",
       timeLabel: "As soon as possible",
       scheduledAt: null,  // Date, if user picked a specific future date/time
       radius: 5,
