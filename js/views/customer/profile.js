@@ -56,7 +56,10 @@ window.Views.CustomerProfile = {
             ` : ``}
 
             <div class="nx-form__row" id="row-nickname" style="cursor:pointer;">
-              <div class="nx-form__label">Nickname</div>
+              <div class="nx-form__label">
+                Nickname
+                <div style="font-size:11.5px; color:var(--nx-text-muted); font-weight:400; margin-top:3px; line-height:1.4;">(if you want to hide your real name and last name when broadcasting)</div>
+              </div>
               <div class="nx-form__value">
                 <span id="val-nickname">${u.nickname ? window.esc(u.nickname) : "Not set"}</span>
                 <span class="nx-form__chev">›</span>
