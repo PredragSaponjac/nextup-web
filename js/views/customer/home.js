@@ -163,7 +163,7 @@ window.Views.CustomerHome = {
           const cat = (window.SERVICES_TAXONOMY[catKey] || {}).label || catKey;
           let body;
           if (catKey === "drive_transport") {
-            body = `${cat} is coming soon.\n\nWe're working on drive-my-car, pet transport, designated driver, and similar transport services. These need a Driver Verified tier (clean driving record + commercial auto insurance proof) plus full background checks before launch — coming after we have our LLC and business insurance in place.`;
+            body = `${cat} is coming soon.\n\nWe're working on drive-my-car, pet transport, designated driver, and similar transport services. Every provider in this category will need to pass enhanced verification — driving record, vehicle insurance, and a background check — before they can respond. Stay tuned.`;
           } else {
             body = `${cat} is coming soon.\n\nWe're enabling this category once our automated background check verification is live. For your safety, every provider in this category will be ID-verified AND background-checked before they can respond. Stay tuned — should be ready in the next few weeks.`;
           }
