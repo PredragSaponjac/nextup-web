@@ -22,7 +22,7 @@ const NX_DISABLED_SUBCATEGORIES = new Set([
   "home_repair/plumbing",
   "home_repair/electrical",
   "home_repair/hvac",
-  "home_repair/roofing",
+  "home_repair/roofing_exterior",
   "automotive/mobile_mechanic",
 ]);
 
@@ -33,7 +33,7 @@ const NX_DISABLED_SUBCATEGORY_REASON = {
   "home_repair/plumbing":   "Plumbing is rolling out once we verify Texas plumber licenses + insurance. The rest of Home Repair is open.",
   "home_repair/electrical": "Electrical work is rolling out once we verify Texas electrician licenses + insurance. The rest of Home Repair is open.",
   "home_repair/hvac":       "HVAC services are rolling out once we verify HVAC licenses + insurance (gas / CO safety). The rest of Home Repair is open.",
-  "home_repair/roofing":    "Roofing is rolling out once we verify roofer licenses, fall-safety insurance, and worker comp. The rest of Home Repair is open.",
+  "home_repair/roofing_exterior":    "Roofing is rolling out once we verify roofer licenses, fall-safety insurance, and worker comp. The rest of Home Repair is open.",
   "automotive/mobile_mechanic": "Mobile mechanic services are rolling out once we verify mechanic certifications + safety insurance. Other Automotive services are open.",
 };
 

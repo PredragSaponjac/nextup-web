@@ -88,7 +88,7 @@ window.Views.BecomeProvider = {
       "home_repair/plumbing",
       "home_repair/electrical",
       "home_repair/hvac",
-      "home_repair/roofing",
+      "home_repair/roofing_exterior",
       "automotive/mobile_mechanic",
     ]);
     const isSubDisabled = (catKey, subKey) =>
@@ -161,7 +161,7 @@ window.Views.BecomeProvider = {
         "home_repair/plumbing",
         "home_repair/electrical",
         "home_repair/hvac",
-        "home_repair/roofing",
+        "home_repair/roofing_exterior",
         "automotive/mobile_mechanic",
       ]);
       const subOptions = Object.entries(cat.subcategories || {})

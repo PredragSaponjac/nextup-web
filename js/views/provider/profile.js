@@ -319,7 +319,7 @@ window.Views.ProviderProfile = {
       "home_repair/plumbing",
       "home_repair/electrical",
       "home_repair/hvac",
-      "home_repair/roofing",
+      "home_repair/roofing_exterior",
       "automotive/mobile_mechanic",
     ]);
     const servicesForCategory = (catKey) => {
