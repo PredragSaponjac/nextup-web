@@ -5,6 +5,21 @@
 
 window.Views.Auth = {
   renderLogin() {
+    // v1.3.22 — "Sign in with Face ID" button appears IF the user
+    // previously enabled biometric login and credentials are stored
+    // in iOS Keychain. The check is a synchronous localStorage read;
+    // the actual Face ID prompt only fires when the user taps the
+    // button. No prompt-on-render = no surprise Face ID popup.
+    const hasFaceIdCreds = window.nxBiometricHasSavedCredentials && window.nxBiometricHasSavedCredentials();
+    const faceIdBtn = hasFaceIdCreds ? `
+      <button type="button" id="face-id-signin-btn" class="nx-cta" style="background:#1a1a1a; border:1px solid #22c55e; color:#22c55e; margin-bottom:14px; font-weight:600;">
+        🔐 Sign in with Face ID
+      </button>
+      <div style="text-align:center; font-size:11px; color:var(--nx-text-muted); margin:-6px 0 18px; letter-spacing:0.04em;">
+        — or sign in with your password —
+      </div>
+    ` : "";
+
     window.mount(`
       <div class="nx-screen">
         <div class="nx-screen__body">
@@ -17,6 +32,8 @@ window.Views.Auth = {
           <div style="text-align:center; padding:12px 0 30px;">
             <div style="font-family:var(--nx-font-serif); font-style:italic; font-size:26px; color:var(--nx-text);">Welcome back</div>
           </div>
+
+          ${faceIdBtn}
 
           <form id="login-form" class="nx-form">
             <div class="nx-form__row">
@@ -54,6 +71,54 @@ window.Views.Auth = {
       window.navigate("forgot-password");
     });
 
+    // v1.3.22 — Face ID sign-in button (only present if creds saved)
+    const faceIdBtn = document.getElementById("face-id-signin-btn");
+    if (faceIdBtn) {
+      faceIdBtn.addEventListener("click", async () => {
+        faceIdBtn.disabled = true;
+        const origText = faceIdBtn.textContent;
+        faceIdBtn.textContent = "Authenticating…";
+        try {
+          const creds = await window.nxBiometricLoadCredentials();
+          if (!creds || !creds.token) {
+            // User cancelled Face ID, or biometric failed
+            faceIdBtn.disabled = false;
+            faceIdBtn.textContent = origText;
+            return;
+          }
+          // Validate the saved token still works server-side
+          window.persistToken(creds.token);
+          let me;
+          try {
+            me = await window.apiMe();
+          } catch (apiErr) {
+            // Token expired (or invalid) — wipe stale creds + fall back
+            // to password login. Show a friendly message.
+            await window.nxBiometricDeleteCredentials();
+            window.clearSession && window.clearSession();
+            faceIdBtn.style.display = "none";
+            const errEl2 = document.getElementById("login-error");
+            if (errEl2) {
+              errEl2.textContent = "Saved Face ID session expired. Please sign in with your password.";
+              errEl2.style.display = "block";
+            }
+            return;
+          }
+          window.persistUser(me);
+          const role = me.role === "provider" ? "provider" : "customer";
+          window.persistRole(role);
+          const mode = (me.has_provider_profile && me.role === "provider") ? "provider" : "customer";
+          window.setActiveMode(mode);
+          window.state.biometricUnlocked = true;
+          window.nxPushRegister && window.nxPushRegister();
+          window.navigate(mode === "provider" ? "dashboard" : "home");
+        } catch (ex) {
+          faceIdBtn.disabled = false;
+          faceIdBtn.textContent = origText;
+        }
+      });
+    }
+
     const form = document.getElementById("login-form");
     const errEl = document.getElementById("login-error");
     const btn = document.getElementById("submit-btn");
@@ -61,11 +126,10 @@ window.Views.Auth = {
       e.preventDefault();
       errEl.style.display = "none";
       btn.disabled = true; btn.textContent = "Signing in…";
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
       try {
-        const data = await window.apiLogin(
-          document.getElementById("login-email").value.trim(),
-          document.getElementById("login-password").value,
-        );
+        const data = await window.apiLogin(email, password);
         window.persistToken(data.access_token);
         const me = await window.apiMe();
         window.persistUser(me);
@@ -76,7 +140,13 @@ window.Views.Auth = {
         const mode = (me.has_provider_profile && me.role === "provider") ? "provider" : "customer";
         window.setActiveMode(mode);
         window.state.biometricUnlocked = true;
-        await window.maybeOfferBiometricAfterLogin();
+        // v1.3.22 — offer to enable Face ID. If the user accepts, ALSO
+        // save the email + token in Keychain so they can sign in with
+        // Face ID next time without typing the password.
+        const offered = await window.maybeOfferBiometricAfterLogin();
+        if (offered === true && window.nxBiometricSaveCredentials) {
+          await window.nxBiometricSaveCredentials(email, data.access_token);
+        }
         window.nxPushRegister && window.nxPushRegister();
         window.navigate(mode === "provider" ? "dashboard" : "home");
       } catch (ex) {

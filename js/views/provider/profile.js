@@ -239,6 +239,16 @@ window.Views.ProviderProfile = {
         if (turningOn) {
           const ok = await window.nxBiometricAuthenticate("Enable Face ID for NextUp");
           if (!ok) return;
+          // v1.3.22 \u2014 save token in Keychain so user can sign in
+          // with Face ID after sign-out (no password retype needed).
+          if (window.nxBiometricSaveCredentials && window.state.token && u.email) {
+            await window.nxBiometricSaveCredentials(u.email, window.state.token);
+          }
+        } else {
+          // v1.3.22 \u2014 turning OFF removes saved Keychain creds.
+          if (window.nxBiometricDeleteCredentials) {
+            await window.nxBiometricDeleteCredentials();
+          }
         }
         window.setBiometricEnabled(turningOn);
         document.getElementById("val-biometric").textContent = turningOn ? "On" : "Off";

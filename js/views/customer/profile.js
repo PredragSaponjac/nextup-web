@@ -162,6 +162,17 @@ window.Views.CustomerProfile = {
         if (turningOn) {
           const ok = await window.nxBiometricAuthenticate("Enable Face ID for NextUp");
           if (!ok) return;
+          // v1.3.22 — also save email + token in Keychain so the user
+          // can sign in with Face ID after a sign-out.
+          if (window.nxBiometricSaveCredentials && window.state.token && u.email) {
+            await window.nxBiometricSaveCredentials(u.email, window.state.token);
+          }
+        } else {
+          // v1.3.22 — turning OFF removes saved credentials too, so
+          // there's no "Sign in with Face ID" button on the next login.
+          if (window.nxBiometricDeleteCredentials) {
+            await window.nxBiometricDeleteCredentials();
+          }
         }
         window.setBiometricEnabled(turningOn);
         document.getElementById("val-biometric").textContent = turningOn ? "On" : "Off";
