@@ -1,21 +1,168 @@
 /* =============================================================
-   NextUp — Provider ID Verification (Phase 1)
+   NextUp — ID Verification (works for customer + provider modes)
    Route: #verify-id
-   Two-step camera flow: front of government ID → selfie → submit.
-   Uploads as multipart to POST /api/providers/verify-id.
+
+   Two flows, picked at runtime by /api/verify-id/start:
+     1. AUTOMATED (Persona configured server-side): user pays $5
+        via Stripe Checkout → redirected to Persona's hosted ID +
+        selfie + liveness flow → webhook updates status. Most
+        verifications complete in 30-60 seconds with no human in
+        the loop.
+     2. MANUAL (Persona env vars not set, fallback): two-step
+        camera capture (ID front + selfie) uploaded as multipart
+        to /api/providers/verify-id (provider) or
+        /api/auth/verify-id (customer). Admin reviews via email
+        link.
    ============================================================= */
 
 window.Views.ProviderVerifyId = {
-  // In-flight state — kept on the view object so re-renders preserve it
+  // Automated-mode state
+  _mode: null,            // "automated" | "manual" | null (loading)
+  _checkoutUrl: null,
+  _resumeUrl: null,
+  _feeUsd: 5,
+
+  // Manual-mode state (preserved across re-renders)
   _idDataUrl: null,
   _selfieDataUrl: null,
-  _step: 1,         // 1 = ID, 2 = selfie, 3 = review-and-submit
+  _step: 1,               // 1 = ID, 2 = selfie, 3 = review-and-submit
 
   async render() {
     this._idDataUrl = null;
     this._selfieDataUrl = null;
     this._step = 1;
+    this._mode = null;
+    this._checkoutUrl = null;
+    this._resumeUrl = null;
+
+    // Show a quick loading state while we ask the server which mode applies
+    window.mount(`
+      <div class="nx-screen">
+        <div class="nx-screen__body">
+          <header class="nx-appbar nx-appbar--with-back">
+            <button class="nx-appbar__back" id="back-btn" aria-label="Back">‹</button>
+            <span class="nx-appbar__title">Get ID verified</span>
+            <div></div>
+          </header>
+          <div style="text-align:center; padding:64px 24px; color:var(--nx-text-muted);">Setting up verification…</div>
+        </div>
+      </div>
+    `);
+    document.getElementById("back-btn").addEventListener("click", () => {
+      const isProviderMode = window.getActiveMode && window.getActiveMode() === "provider";
+      window.navigate(isProviderMode ? "p-profile" : "profile");
+    });
+
+    // Probe the server — does it have Persona configured?
+    let resp = null;
+    try {
+      resp = await window.apiFetch("/api/verify-id/start", { method: "POST", body: {} });
+    } catch (err) {
+      // 4xx ("already verified" etc) → fall back to manual UI as safety net
+      console.warn("verify-id/start failed:", err);
+    }
+
+    if (resp && resp.mode === "automated") {
+      this._mode = "automated";
+      this._checkoutUrl = resp.checkout_url || null;
+      this._resumeUrl = resp.resume_url || null;
+      this._feeUsd = resp.fee_usd || 5;
+      this._mountAutomated();
+      return;
+    }
+
+    // Fall back to the manual camera flow
+    this._mode = "manual";
     this._mount();
+  },
+
+  _mountAutomated() {
+    const isResume = !!this._resumeUrl;
+    const url = this._checkoutUrl || this._resumeUrl;
+    const fee = this._feeUsd;
+    window.mount(`
+      <div class="nx-screen">
+        <div class="nx-screen__body">
+          <header class="nx-appbar nx-appbar--with-back">
+            <button class="nx-appbar__back" id="back-btn" aria-label="Back">‹</button>
+            <span class="nx-appbar__title">Get ID verified</span>
+            <div></div>
+          </header>
+
+          <div style="text-align:center; padding:14px 0 18px;">
+            <div style="font-family:var(--nx-font-serif); font-style:italic; font-size:24px; color:var(--nx-text);">
+              ${isResume ? "Resume your verification" : "Verify your identity"}
+            </div>
+          </div>
+
+          ${isResume ? `` : `
+            <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:14px;">
+              <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text); font-weight:600; margin-bottom:6px;">$${fee.toFixed(2)} one-time fee</div>
+              <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.6;">
+                Verification is run by Persona — a global identity vendor used by Robinhood, Coinbase, and others. Takes about 60 seconds: you'll photograph a government ID and take a selfie with a quick liveness check. Result is automatic.
+              </div>
+            </div>
+          `}
+
+          <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:18px;">
+            <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text); font-weight:600; margin-bottom:6px;">What you'll need</div>
+            <ul style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.7; padding-left:18px; margin:0;">
+              <li>A driver's license, state ID, or passport</li>
+              <li>Good lighting and a steady hand</li>
+              <li>~60 seconds</li>
+            </ul>
+          </div>
+
+          <button class="nx-cta" id="vid-go" type="button" style="background:#22c55e; color:#000; font-weight:600;">
+            ${isResume ? "Continue verification ›" : `Pay $${fee.toFixed(2)} & verify ›`}
+          </button>
+
+          <div style="font-size:11px; color:var(--nx-text-muted); margin-top:12px; text-align:center;">
+            ID verification confirms identity, not background. By continuing you agree to our <a href="terms.html" style="color:#22c55e;">Terms</a>.
+          </div>
+
+          <div id="vid-err" style="display:none; color:#ef4444; font-size:13px; margin-top:14px; text-align:center;"></div>
+        </div>
+      </div>
+    `);
+
+    document.getElementById("back-btn").addEventListener("click", () => {
+      const isProviderMode = window.getActiveMode && window.getActiveMode() === "provider";
+      window.navigate(isProviderMode ? "p-profile" : "profile");
+    });
+
+    document.getElementById("vid-go").addEventListener("click", async () => {
+      const btn = document.getElementById("vid-go");
+      btn.disabled = true; btn.textContent = "Opening…";
+      // Use Capacitor Browser plugin if available (in-app browser); else fall
+      // back to plain navigation. Either way, after the user finishes, they
+      // come back to the app — we refresh /me so the Profile shows the new
+      // verification status (the Persona webhook updates the DB server-side).
+      try {
+        const Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+        if (Browser && Browser.open) {
+          // Listen ONCE for browser dismissal → refresh state + go back
+          if (Browser.addListener) {
+            const sub = Browser.addListener("browserFinished", async () => {
+              try {
+                const me = await window.apiMe();
+                window.persistUser(me);
+              } catch (_) {}
+              const isProviderMode = window.getActiveMode && window.getActiveMode() === "provider";
+              window.navigate(isProviderMode ? "p-profile" : "profile");
+              try { sub.remove && sub.remove(); } catch (_) {}
+            });
+          }
+          await Browser.open({ url, presentationStyle: "popover" });
+        } else {
+          window.location.href = url;
+        }
+      } catch (e) {
+        const err = document.getElementById("vid-err");
+        if (err) { err.textContent = "Couldn't open verification: " + (e.message || e); err.style.display = "block"; }
+        btn.disabled = false; btn.textContent = isResume ? "Continue verification ›" : `Pay $${fee.toFixed(2)} & verify ›`;
+      }
+    });
   },
 
   _mount() {
