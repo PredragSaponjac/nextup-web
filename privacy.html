@@ -1,207 +1,143 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Privacy Policy — NextUp Services</title>
+<meta name="description" content="NextUp Services privacy policy — what data we collect, how we use it, and your rights.">
+<link rel="canonical" href="https://nextupservices.com/privacy.html">
+<link rel="icon" type="image/png" href="./favicon.png">
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #0b0b0c;
-    --panel: #141416;
-    --text: #e7e7ea;
-    --muted: #9a9aa0;
-    --line: #232327;
-    --accent: #f0b400;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.55;
-    font-size: 16px;
+  /* Self-contained styles (no external CSS) so this page renders identically
+     in the public website AND inside the Capacitor app webview, where
+     ./base.css and ./style.css don't exist. */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    width: 100%;
+    min-height: 100%;
+    background: #0a0a0a;
+    color: #fafaf9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -webkit-text-size-adjust: 100%;
   }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
-  header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 28px; }
-  header .brand { font-size: 13px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; font-weight: 600; }
-  h1 { font-size: 28px; margin: 8px 0 6px; font-weight: 700; }
-  .updated { color: var(--muted); font-size: 13px; }
-  h2 { font-size: 19px; margin: 32px 0 10px; font-weight: 600; }
-  h3 { font-size: 15px; margin: 18px 0 6px; font-weight: 600; color: var(--text); }
-  p, li { color: var(--text); }
-  ul { padding-left: 20px; }
-  ul li { margin: 4px 0; }
-  a { color: var(--accent); }
-  code { background: var(--panel); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
-  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .legal { max-width: 760px; margin: 0 auto; padding: 18px 22px 80px; }
+  .legal__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 14px;
+    border-bottom: 1px solid #232323;
+    margin-bottom: 18px;
+  }
+  .legal__back {
+    display: inline-block;
+    padding: 10px 14px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #fafaf9;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .legal__back:active { background: #232323; }
+  .legal__brand { font-size: 13px; color: #a8a29e; letter-spacing: 0.04em; }
+  .legal h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 5vw, 42px); margin: 0 0 10px; font-weight: 600; }
+  .legal .legal__updated { color: #a8a29e; font-size: 13px; margin-bottom: 28px; }
+  .legal h2 { font-family: Georgia, "Times New Roman", serif; font-size: 22px; margin: 36px 0 12px; color: #fafaf9; font-weight: 600; }
+  .legal p, .legal li { font-size: 15px; line-height: 1.65; color: #d6d3d1; margin: 0 0 14px; }
+  .legal ul { padding-left: 20px; margin: 0 0 14px; }
+  .legal a { color: #fafaf9; text-decoration: underline; }
+  .legal__readonly { background: #0f1a0f; border: 1px solid #22c55e; border-radius: 12px; padding: 14px 18px; margin: 6px 0 22px; }
+  .legal__readonly p { color: #86efac; margin: 0; font-size: 13px; line-height: 1.5; }
+  .legal strong { color: #fafaf9; }
 </style>
 </head>
 <body>
-<main class="wrap">
-<header>
-  <div class="brand">NextUp Services</div>
+<div class="legal">
+  <div class="legal__topbar">
+    <a href="javascript:void(0)" class="legal__back" id="back-btn" role="button">&lsaquo; Back</a>
+    <span class="legal__brand">NextUp Services</span>
+  </div>
   <h1>Privacy Policy</h1>
-  <div class="updated">Last updated: April 22, 2026</div>
-</header>
+  <p class="legal__updated">Effective: April 30, 2026</p>
 
-<p>
-  NextUp Services ("NextUp", "we", "us") operates the NextUp mobile app and
-  web service, which connects customers looking for on-demand services with
-  nearby service providers. This policy explains what personal information
-  we collect, how we use it, who we share it with, and the choices you have.
-</p>
-<p>
-  By creating an account or using NextUp, you agree to this policy.
-</p>
+  <div class="legal__readonly">
+    <p>📖 <strong>You're just reading.</strong> This explains what data we collect and how. There's nothing to approve here — tap "&lsaquo; Back" up top whenever you're done.</p>
+  </div>
 
-<h2>1. Information we collect</h2>
+  <p>NextUp ("we", "us", "our") operates the NextUp mobile app and website. This Privacy Policy explains what information we collect, how we use it, and the choices you have.</p>
 
-<h3>Account information</h3>
-<ul>
-  <li>Email address and password (password is stored as a one-way hash — we never see or store your actual password).</li>
-  <li>Full name.</li>
-  <li>Phone number (optional for customers, required for providers).</li>
-  <li>Account role: customer, provider, or both.</li>
-</ul>
-
-<h3>Provider business information</h3>
-<p>If you register as a provider, we also collect:</p>
-<ul>
-  <li>Business name, category, and the specific services you offer.</li>
-  <li>Business address, city, state, ZIP, and its geographic coordinates (latitude/longitude).</li>
-  <li>Public description of your business.</li>
-  <li>Availability status (online / offline) so customers can be matched only to providers who are currently accepting work.</li>
-</ul>
-
-<h3>Location</h3>
-<ul>
-  <li>When you broadcast a service request, we collect your device's current latitude and longitude so we can route the request to providers in range.</li>
-  <li>We only request your location after you explicitly grant permission through iOS or Android.</li>
-  <li>Your exact coordinates are <strong>never shared with providers who have not been selected</strong>. Browsing providers only see approximate distance (e.g. "0.8 mi away").</li>
-  <li>Provider coordinates are shared with customers so they can see which providers are nearby.</li>
-</ul>
-
-<h3>Service request content</h3>
-<ul>
-  <li>The category, description, preferred timeframe, optional notes, and optional gender preference you include in a request.</li>
-  <li>Provider responses: availability, price, and message.</li>
-  <li>Booking history and status of each request.</li>
-</ul>
-
-<h3>Reviews and ratings</h3>
-<ul>
-  <li>Star rating (1–5) and optional written review you leave for a provider. Reviews are public in the app.</li>
-</ul>
-
-<h3>Messages</h3>
-<ul>
-  <li>Direct 1:1 messages between a customer and a provider, scoped to a specific service request. Messages are stored so both parties can read the conversation.</li>
-</ul>
-
-<h3>Device and push-notification data</h3>
-<ul>
-  <li>Device push tokens (Apple Push Notification service on iOS, Firebase Cloud Messaging on Android) so we can notify you of new requests, responses, and messages.</li>
-  <li>Operating system platform (ios or android) associated with each token.</li>
-</ul>
-
-<h3>Biometric unlock</h3>
-<ul>
-  <li>If you enable Face ID or Touch ID to unlock NextUp, all biometric processing happens <strong>on your device by Apple's Secure Enclave</strong>. NextUp never receives, stores, or transmits your biometric data.</li>
-</ul>
-
-<h3>Payment information</h3>
-<ul>
-  <li>Providers pay a subscription fee to list on NextUp. Payments are processed entirely by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe</a>. NextUp never receives or stores your full card number, CVC, or bank details.</li>
-  <li>We store a Stripe customer ID and subscription ID so we can display your subscription status and link you to Stripe's hosted Customer Portal to update or cancel.</li>
-</ul>
-
-<h3>Automatically collected usage data</h3>
-<ul>
-  <li>Timestamps of account creation, login, requests, responses, reviews, and messages.</li>
-  <li>Server logs containing IP address and user agent when you contact our API. These are kept for short-term debugging and security monitoring.</li>
-</ul>
-
-<h2>2. How we use this information</h2>
-<ul>
-  <li>Match customers to providers based on category, subcategory, and distance.</li>
-  <li>Send push notifications to providers about new requests, and to customers about new responses and messages.</li>
-  <li>Process provider subscription billing.</li>
-  <li>Show reviews and ratings so customers can evaluate providers.</li>
-  <li>Prevent abuse, fraud, and spam.</li>
-  <li>Comply with legal obligations.</li>
-</ul>
-
-<h2>3. Who we share your information with</h2>
-<p>We do not sell your personal data to anyone. We share limited information only with the service providers we rely on to operate the app:</p>
-<div class="panel">
+  <h2>1. Information we collect</h2>
   <ul>
-    <li><strong>Apple Push Notification service (APNs)</strong> — to deliver push notifications on iOS devices.</li>
-    <li><strong>Firebase Cloud Messaging (FCM)</strong> — to deliver push notifications on Android devices.</li>
-    <li><strong>Stripe</strong> — to process provider subscription payments. <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's privacy policy</a>.</li>
-    <li><strong>Google Maps / Google Places</strong> — to look up provider business information and to compute or display map content when a map is shown in the app. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</li>
-    <li><strong>OpenStreetMap / Nominatim</strong> — to reverse-geocode coordinates into city names. <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener">OSMF privacy policy</a>.</li>
-    <li><strong>Render</strong> — our hosting provider, which stores our database and runs our backend API. <a href="https://render.com/privacy" target="_blank" rel="noopener">Render's privacy policy</a>.</li>
-    <li><strong>GitHub Pages</strong> — hosts the web version of the app and this policy.</li>
+    <li><strong>Account information</strong> you provide: name, email, phone number, password (stored hashed, never in plain text).</li>
+    <li><strong>Service-request content</strong>: the service you need, your preferred timing, notes, and — with your permission — your current location (latitude/longitude) so we can match you with nearby providers.</li>
+    <li><strong>Provider-profile information</strong> if you choose to offer services: business name, service categories, city, service radius, and business photos you upload.</li>
+    <li><strong>Device information</strong>: platform (iOS/Android), app version, push notification token (if you grant notifications permission).</li>
+    <li><strong>Usage data</strong>: broadcast history, response history, completed bookings, and ratings you leave.</li>
   </ul>
-</div>
-<p>
-  We also share limited information <em>within the app</em>: when you broadcast a request, matching providers see your distance, request description, timeframe, and any notes you included. Providers do not see your email, phone, or exact address until you pick one of them — at that point the address is typically shared by the customer through the in-app messaging thread.
-</p>
-<p>
-  We may disclose information if required by law, subpoena, or court order, or when we believe in good faith that disclosure is necessary to protect the rights, property, or safety of NextUp, our users, or the public.
-</p>
 
-<h2>4. How long we keep your information</h2>
-<ul>
-  <li>Account data: until you delete your account.</li>
-  <li>Service requests, responses, and messages: retained as part of your history so you can see past bookings.</li>
-  <li>Server logs: up to 30 days for debugging and abuse prevention.</li>
-  <li>Deleted accounts: purged within 30 days of your deletion request.</li>
-</ul>
+  <h2>2. How we use your information</h2>
+  <ul>
+    <li>To connect customers with nearby providers (we share your service request — not your full address — with matching providers until you accept one).</li>
+    <li>To authenticate you and keep your account secure.</li>
+    <li>To send push notifications about responses, bookings, and important account events (only if you grant permission).</li>
+    <li>To improve the service and fix bugs.</li>
+    <li>To comply with legal obligations.</li>
+  </ul>
 
-<h2>5. Your choices and rights</h2>
-<ul>
-  <li><strong>Access and update</strong> your profile information at any time in the app's Profile screen.</li>
-  <li><strong>Disable push notifications</strong> in iOS or Android settings; the app continues to work without them.</li>
-  <li><strong>Turn off location</strong> in iOS or Android settings; you will not be able to broadcast location-based service requests until you turn it back on.</li>
-  <li><strong>Cancel your subscription</strong> (providers) via the "Manage subscription" link in the Billing screen, which opens Stripe's Customer Portal.</li>
-  <li><strong>Delete your account</strong> — email us at the address below and we will delete your account and associated personal data within 30 days.</li>
-  <li><strong>Request a copy of your data</strong> — email us and we will provide an export of the personal information we hold about you.</li>
-</ul>
-<p>
-  If you are a resident of California, the EU, the UK, or another jurisdiction with specific privacy rights, you may have additional rights under applicable law (e.g. GDPR, CCPA). Contact us using the email below to exercise any of those rights.
-</p>
+  <h2>3. Location privacy</h2>
+  <p>When you broadcast a request, we send only your approximate distance (e.g. "0.8 mi") to potential providers — not your exact coordinates or address. Your exact address is revealed <em>only</em> to the single provider you explicitly accept for a booking, and only for that booking.</p>
 
-<h2>6. Children</h2>
-<p>
-  NextUp is intended for users aged 18 and older. We do not knowingly collect personal information from anyone under 18. If you believe a child has created an account, please contact us and we will delete the account.
-</p>
+  <h2>4. How we share information</h2>
+  <p>We do not sell your personal information. We share data only:</p>
+  <ul>
+    <li>With service providers you interact with through the app, as described above.</li>
+    <li>With infrastructure vendors strictly necessary to run the service (hosting on Render, Apple Push Notification service, Google Cloud Messaging).</li>
+    <li>When required by law or to protect user safety.</li>
+  </ul>
 
-<h2>7. Security</h2>
-<p>
-  We use industry-standard safeguards to protect your data, including encryption in transit (HTTPS / TLS), one-way password hashing with bcrypt, and signed JSON Web Tokens for authentication. No system is perfectly secure, but we work to respond quickly to suspected issues.
-</p>
+  <h2>5. Data retention</h2>
+  <p>We keep your account data while your account is active. You may delete your account at any time from the Profile screen; we then permanently delete your personal data within 30 days, except minimal records required by law (e.g. tax records for paid provider subscriptions).</p>
 
-<h2>8. Changes to this policy</h2>
-<p>
-  We may update this policy from time to time. When we make material changes, we will update the "Last updated" date above and, where appropriate, notify you in the app or by email. Continued use of NextUp after an update means you accept the revised policy.
-</p>
+  <h2>6. Your rights</h2>
+  <p>You have the right to access, correct, or delete your personal data; to object to or restrict processing; and to data portability. To exercise any of these, email us at <a href="mailto:privacy@nextupservices.com">privacy@nextupservices.com</a>.</p>
 
-<h2>9. Contact us</h2>
-<p>
-  If you have any questions about this privacy policy or about how NextUp handles your data, contact us at:
-</p>
-<div class="panel">
-  <strong>NextUp Services</strong><br />
-  Email: <a href="mailto:privacy@nextupservices.com">privacy@nextupservices.com</a>
+  <h2>7. Children</h2>
+  <p>NextUp is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe we have, contact us and we will delete the data promptly.</p>
+
+  <h2>8. Changes to this policy</h2>
+  <p>We may update this policy from time to time. When we do, we will update the "Effective" date at the top and, for material changes, notify you in the app.</p>
+
+  <h2>9. Contact</h2>
+  <p>Questions or requests about this policy: <a href="mailto:privacy@nextupservices.com">privacy@nextupservices.com</a>.</p>
 </div>
 
-<footer>
-  &copy; 2026 NextUp Services. All rights reserved.
-  &middot; <a href="index.html">Back to app</a>
-</footer>
-</main>
+<script>
+  // Smart back button: prefer browser history; fall back to "./" if direct visit.
+  (function () {
+    var btn = document.getElementById('back-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (window.history && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = './';
+      }
+    });
+  })();
+</script>
 </body>
 </html>

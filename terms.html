@@ -2,32 +2,88 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terms of Service — NextUp</title>
-<meta name="description" content="NextUp terms of service — the agreement between you and NextUp.">
-<link rel="stylesheet" href="./base.css">
-<link rel="stylesheet" href="./style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Terms of Service — NextUp Services</title>
+<meta name="description" content="NextUp Services terms of service — the agreement between you and NextUp.">
+<link rel="canonical" href="https://nextupservices.com/terms.html">
+<link rel="icon" type="image/png" href="./favicon.png">
 <style>
-  .legal { max-width: 760px; margin: 0 auto; padding: 80px 24px 120px; color: #fafaf9; }
-  .legal h1 { font-family: 'Zodiak', Georgia, serif; font-size: clamp(32px, 5vw, 48px); margin: 0 0 12px; }
-  .legal .legal__updated { color: #a8a29e; font-size: 13px; margin-bottom: 40px; }
-  .legal h2 { font-family: 'Zodiak', Georgia, serif; font-size: 22px; margin: 40px 0 14px; color: #fafaf9; }
-  .legal h3 { font-family: 'Satoshi', sans-serif; font-size: 16px; margin: 22px 0 8px; color: #fafaf9; font-weight: 600; }
-  .legal p, .legal li { font-family: 'Satoshi', sans-serif; font-size: 15px; line-height: 1.65; color: #d6d3d1; margin: 0 0 14px; }
+  /* Self-contained styles (no external CSS) so this page renders identically
+     in the public website AND inside the Capacitor app webview, where
+     ./base.css and ./style.css don't exist. */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    /* Critical for iOS WKWebView: explicit overflow-y + momentum scrolling
+       so the page scrolls with a finger swipe inside the in-app browser. */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    width: 100%;
+    min-height: 100%;
+    background: #0a0a0a;
+    color: #fafaf9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* iPhone safe area handling so content isn't hidden under the notch. */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .legal { max-width: 760px; margin: 0 auto; padding: 18px 22px 80px; }
+  .legal__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 14px;
+    border-bottom: 1px solid #232323;
+    margin-bottom: 18px;
+  }
+  .legal__back {
+    display: inline-block;
+    padding: 10px 14px;
+    margin: 0;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #fafaf9;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .legal__back:active { background: #232323; }
+  .legal__brand { font-size: 13px; color: #a8a29e; letter-spacing: 0.04em; }
+  .legal h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 5vw, 42px); margin: 0 0 10px; font-weight: 600; }
+  .legal .legal__updated { color: #a8a29e; font-size: 13px; margin-bottom: 28px; }
+  .legal h2 { font-family: Georgia, "Times New Roman", serif; font-size: 22px; margin: 36px 0 12px; color: #fafaf9; font-weight: 600; }
+  .legal h3 { font-size: 16px; margin: 22px 0 8px; color: #fafaf9; font-weight: 600; }
+  .legal p, .legal li { font-size: 15px; line-height: 1.65; color: #d6d3d1; margin: 0 0 14px; }
   .legal ul { padding-left: 20px; margin: 0 0 14px; }
   .legal a { color: #fafaf9; text-decoration: underline; }
-  .legal__back { display: inline-block; margin-bottom: 40px; font-size: 14px; color: #a8a29e; text-decoration: none; }
-  .legal__back:hover { color: #fafaf9; }
   .legal__important { background: #1a1a1a; border: 1px solid #f0b400; border-radius: 12px; padding: 16px 20px; margin: 14px 0; }
   .legal__important p { color: #f0b400; margin: 0; font-size: 13.5px; }
+  .legal__readonly { background: #0f1a0f; border: 1px solid #22c55e; border-radius: 12px; padding: 14px 18px; margin: 6px 0 22px; }
+  .legal__readonly p { color: #86efac; margin: 0; font-size: 13px; line-height: 1.5; }
   .legal strong { color: #fafaf9; }
 </style>
 </head>
-<body style="background:#0a0a0a;">
+<body>
 <div class="legal">
-  <a href="./" class="legal__back">&lsaquo; Back to NextUp</a>
+  <div class="legal__topbar">
+    <a href="javascript:void(0)" class="legal__back" id="back-btn" role="button">&lsaquo; Back</a>
+    <span class="legal__brand">NextUp Services</span>
+  </div>
   <h1>Terms of Service</h1>
   <p class="legal__updated">Effective: April 30, 2026</p>
+
+  <div class="legal__readonly">
+    <p>📖 <strong>You're just reading.</strong> You agreed to these Terms when you created your account — there's nothing to approve here. Tap "&lsaquo; Back" up top whenever you're done.</p>
+  </div>
 
   <p>These Terms of Service ("Terms") are a legal agreement between you ("you", "user") and NextUp ("NextUp", "we", "us", "our"). By creating an account, downloading the app, visiting the website, or otherwise using NextUp, you agree to these Terms in full. If you do not agree, do not use NextUp.</p>
 
@@ -171,5 +227,25 @@
   <h2>17. Severability and entire agreement</h2>
   <p>If any provision of these Terms is held unenforceable, that provision shall be enforced to the maximum extent permitted, and the remaining provisions shall continue in full force. These Terms (together with the Privacy Policy) constitute the entire agreement between you and NextUp regarding NextUp and supersede any prior agreements. Failure by NextUp to enforce any provision is not a waiver of that provision.</p>
 </div>
+
+<script>
+  // Smart back button: prefer browser history (returns to whatever screen
+  // launched terms.html — Profile, signup, login, etc.). If there's no
+  // history (user landed on this page directly via Google search), fall
+  // back to the homepage of whichever surface this is loaded in.
+  (function () {
+    var btn = document.getElementById('back-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      // history.length === 1 means this is the only entry → no "back" target.
+      if (window.history && window.history.length > 1) {
+        window.history.back();
+      } else {
+        // Public website: go to landing root. In-app: go to app shell.
+        window.location.href = './';
+      }
+    });
+  })();
+</script>
 </body>
 </html>
