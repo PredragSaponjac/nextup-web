@@ -585,6 +585,13 @@ window.Views.CustomerBroadcast = {
           : null,
         required_provider_verification: FORM_STATE.requiredProviderVerification || "any",
         required_provider_entity_type: FORM_STATE.requiredProviderEntityType || "any",
+        // v1.3.18 — pass the friendly label the customer picked
+        // ("As soon as possible", "In 15 minutes", "Tomorrow at 5pm")
+        // and the specific scheduled_at if they used the date picker.
+        // Backend persists these so providers see the exact urgency
+        // instead of just the coarse 4-bucket timeframe enum.
+        preferred_time_label: FORM_STATE.timeLabel || null,
+        scheduled_at: FORM_STATE.scheduledAt ? FORM_STATE.scheduledAt.toISOString() : null,
       };
 
       const res = await window.apiFetch("/api/requests", { method: "POST", body });

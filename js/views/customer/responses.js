@@ -47,11 +47,35 @@ window.Views.CustomerResponses = {
       const req = await window.apiFetch(`/api/requests/${this.requestId}`);
       const responses = (req.responses || []);
       const count = responses.length;
-      const createdMs = req.created_at ? Date.parse(req.created_at) : Date.now();
+      // v1.3.18 — TZ-safe timestamp parsing. The backend returns
+      // created_at without an explicit timezone (e.g. "2026-04-30
+      // 20:30:00"). iOS Safari parses naive timestamps as LOCAL time;
+      // for a customer in Houston (CDT, UTC-5) this made elapsedMin
+      // negative and the 3-minute expand-card trigger never fired.
+      // Fix: force UTC interpretation by appending "Z" when there's
+      // no timezone marker. Also handle the "T" separator variant.
+      let createdMs = Date.now();
+      if (req.created_at) {
+        let s = String(req.created_at).trim();
+        // Convert "YYYY-MM-DD HH:MM:SS" to ISO "YYYY-MM-DDTHH:MM:SS"
+        if (s.indexOf("T") === -1 && s.indexOf(" ") !== -1) {
+          s = s.replace(" ", "T");
+        }
+        // Add Z if no timezone present (safe — backend stores UTC)
+        if (!/[Zz]|[+-]\d\d:?\d\d$/.test(s)) {
+          s = s + "Z";
+        }
+        const t = Date.parse(s);
+        if (!isNaN(t)) createdMs = t;
+      }
       const elapsedMin = Math.max(0, (Date.now() - createdMs) / 60000);
       const ago = this._timeAgo(Date.now() - createdMs);
       const tf = req.timeframe || "within_2h";
       const radius = TF_RADIUS[tf] || 10;
+      // v1.3.18 — friendly time label for display. Customer picked
+      // "As soon as possible" or "In 15 minutes" etc. — show that
+      // verbatim instead of the bucket name "Within 1 hour".
+      const friendlyTime = req.preferred_time_label || TF_LABEL[tf] || tf;
 
       // Body: a stack of pieces (beta note, waiting state, expand prompt, cards)
       const pieces = [];
@@ -86,7 +110,7 @@ window.Views.CustomerResponses = {
 
             <div class="nx-listhead">
               <h1 class="nx-listhead__title">${count} ${count === 1 ? "Response" : "Responses"}</h1>
-              <div class="nx-listhead__sub">sent ${window.esc(ago)} · ${window.esc(TF_LABEL[tf] || tf)} · ${radius} mi</div>
+              <div class="nx-listhead__sub">sent ${window.esc(ago)} · ${window.esc(friendlyTime)} · ${radius} mi</div>
             </div>
 
             ${pieces.join("")}
