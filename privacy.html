@@ -15,27 +15,29 @@
   /* iOS WKWebView scroll fix — see terms.html for the full reasoning.
      html locked to viewport, body is the explicit scroll container.
      Avoids the nested-scroll trap that iOS handles unreliably. */
-  html {
+  html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    background: #0a0a0a;
-    -webkit-text-size-adjust: 100%;
-  }
-  body {
-    margin: 0;
-    height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     background: #0a0a0a;
     color: #fafaf9;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    -webkit-text-size-adjust: 100%;
   }
-  .legal { max-width: 760px; margin: 0 auto; padding: 18px 22px 80px; }
+  /* v1.3.14 — bulletproof scroll. See terms.html for full reasoning.
+     Default window scroll, no height constraints, safe-area padding
+     moved into .legal wrapper. */
+  body {
+    -webkit-overflow-scrolling: touch;
+    min-height: 100%;
+  }
+  .legal {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-top: calc(18px + env(safe-area-inset-top));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding-left: calc(22px + env(safe-area-inset-left));
+    padding-right: calc(22px + env(safe-area-inset-right));
+  }
   .legal__topbar {
     display: flex;
     align-items: center;
