@@ -59,6 +59,13 @@ function nxIconShirt() {
   // laundry — t-shirt
   return `<svg class="nx-cat__icon" viewBox="0 0 44 44"><path d="M14 8l-8 4 4 8 4-2v18h16V18l4 2 4-8-8-4-4 4h-8z"/></svg>`;
 }
+// v1.3.1 — Categories temporarily gated behind background-check rollout.
+// Tiles still appear on Home (so customers see the full vision) but tapping
+// them shows a "Coming soon" modal until automated BG checks are live.
+// Once Persona Reports is enabled and we have providers passing BG checks,
+// remove keys from this set to unlock them.
+const NX_COMING_SOON_CATEGORIES = new Set(["childcare", "senior_care"]);
+
 // Map backend-category key → icon fn + display label
 const NX_CATEGORY_ICONS = {
   beauty:         nxIconScissors,
@@ -92,10 +99,15 @@ window.Views.CustomerHome = {
     const tiles = catKeys.map(key => {
       const cat = window.SERVICES_TAXONOMY[key];
       const iconFn = NX_CATEGORY_ICONS[key] || nxIconScissors;
+      const comingSoon = NX_COMING_SOON_CATEGORIES.has(key);
+      const comingBadge = comingSoon
+        ? `<span style="position:absolute; top:8px; right:8px; padding:2px 6px; background:#f0b400; color:#000; font-size:9px; font-weight:700; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">Soon</span>`
+        : "";
       return `
-        <button class="nx-cat" data-cat="${key}">
+        <button class="nx-cat ${comingSoon ? 'nx-cat--coming-soon' : ''}" data-cat="${key}" ${comingSoon ? 'data-coming-soon="1"' : ''} style="position:relative; ${comingSoon ? 'opacity:0.65;' : ''}">
           ${iconFn()}
           <span class="nx-cat__label">${window.esc(cat.label)}</span>
+          ${comingBadge}
         </button>
       `;
     }).join("");
@@ -135,7 +147,17 @@ window.Views.CustomerHome = {
     `);
 
     document.querySelectorAll(".nx-cat").forEach(tile => {
-      tile.addEventListener("click", () => window.navigate(`broadcast/${tile.dataset.cat}`));
+      tile.addEventListener("click", async () => {
+        if (tile.dataset.comingSoon === "1") {
+          const cat = (window.SERVICES_TAXONOMY[tile.dataset.cat] || {}).label || tile.dataset.cat;
+          await window.nxAlert(
+            `${cat} is coming soon.\n\nWe're enabling this category once our automated background check verification is live. For your safety, every provider in this category will be ID-verified AND background-checked before they can respond. Stay tuned — should be ready in the next few weeks.`,
+            { okLabel: "Got it" }
+          );
+          return;
+        }
+        window.navigate(`broadcast/${tile.dataset.cat}`);
+      });
     });
 
     document.getElementById("search-providers-tile").addEventListener("click", () => {
