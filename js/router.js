@@ -15,6 +15,8 @@ const ROUTES = [
   { match: "register",      view: "Auth",              auth: "none",     role: null, fn: "renderRegister" },
   { match: "forgot-password", view: "AuthForgot",       auth: "none",     role: null },
   { match: "change-password", view: "ChangePassword",   auth: "required", role: null },
+  // v1.3.25 — block management (shared customer + provider)
+  { match: "blocked-users",   view: "BlockedUsers",      auth: "required", role: null },
   // Customer routes
   { match: "home",          view: "CustomerHome",      auth: "required", role: "customer" },
   { match: "category",      view: "CustomerCategory",  auth: "required", role: "customer" },

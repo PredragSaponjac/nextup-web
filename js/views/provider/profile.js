@@ -139,6 +139,14 @@ window.Views.ProviderProfile = {
               </div>
             </div>
 
+            <div class="nx-form__row" id="row-blocked-users" style="cursor:pointer;">
+              <div class="nx-form__label">Blocked Users</div>
+              <div class="nx-form__value">
+                <span>Manage</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             ${biometricAvailable ? `
               <div class="nx-form__row" id="row-biometric" style="cursor:pointer;">
                 <div class="nx-form__label">Sign in with Face ID</div>
@@ -273,6 +281,11 @@ window.Views.ProviderProfile = {
     document.getElementById("row-change-password").addEventListener("click", () => {
       window.navigate("change-password");
     });
+
+    const rowBlocked = document.getElementById("row-blocked-users");
+    if (rowBlocked) {
+      rowBlocked.addEventListener("click", () => window.navigate("blocked-users"));
+    }
 
     // ---- Nickname ----
     // Personal display name. The provider's public-facing identity to

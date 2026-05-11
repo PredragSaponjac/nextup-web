@@ -103,6 +103,14 @@ window.Views.CustomerProfile = {
               </div>
             </div>
 
+            <div class="nx-form__row" id="row-blocked-users" style="cursor:pointer;">
+              <div class="nx-form__label">Blocked Users</div>
+              <div class="nx-form__value">
+                <span>Manage</span>
+                <span class="nx-form__chev">›</span>
+              </div>
+            </div>
+
             <a href="terms.html" class="nx-form__row" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; text-decoration:none; color:inherit;">
               <div class="nx-form__label">Terms of Service</div>
               <div class="nx-form__value">
@@ -185,6 +193,11 @@ window.Views.CustomerProfile = {
     document.getElementById("row-change-password").addEventListener("click", () => {
       window.navigate("change-password");
     });
+
+    const rowBlocked = document.getElementById("row-blocked-users");
+    if (rowBlocked) {
+      rowBlocked.addEventListener("click", () => window.navigate("blocked-users"));
+    }
 
     // Nickname — optional display name used as the auto-fallback for
     // anonymous broadcasts and visible across the app instead of the

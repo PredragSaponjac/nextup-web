@@ -522,3 +522,99 @@ window.toast = function (message, type) {
     setTimeout(() => t.remove(), 300);
   }, 3000);
 };
+
+// =============================================================
+// v1.3.25 — Block + Report User Flow
+// Required by Apple App Store Review Guideline 1.2 (User Safety).
+// Symmetric: when you block someone, they immediately stop seeing
+// you too. Reversible from Profile → Blocked Users.
+// =============================================================
+//
+// nxBlockUserFlow({userId, name, onSuccess})
+//   - Shows a modal with: explanation, optional reason text, and an
+//     "also report" checkbox (for serious safety violations).
+//   - Calls POST /api/blocks/{userId} with the reason + report flag.
+//   - Returns true on success, false on cancel/error. Caller can
+//     navigate back / refresh the list / etc. via onSuccess callback.
+//
+// Note: we deliberately use a custom modal here (not nxConfirm) because
+// we need an inline textarea + checkbox, which the generic confirm
+// doesn't support. Reusable across customer + provider screens.
+window.nxBlockUserFlow = function (opts) {
+  opts = opts || {};
+  const userId = opts.userId;
+  const name = opts.name || "this user";
+  if (!userId) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const existing = document.getElementById("nx-modal");
+    if (existing) existing.remove();
+    const overlay = document.createElement("div");
+    overlay.id = "nx-modal";
+    overlay.style.cssText =
+      "position:fixed; inset:0; z-index:10000; display:flex; align-items:center; " +
+      "justify-content:center; padding:24px; background:rgba(0,0,0,0.66); " +
+      "backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);";
+    overlay.innerHTML =
+      '<div role="dialog" aria-modal="true" style="max-width:380px; width:100%; ' +
+      'background:#141414; border:1px solid #2a2a2a; border-radius:16px; ' +
+      'padding:22px; color:#fafaf9; font-family:var(--nx-font-sans,system-ui);">' +
+      '<h2 style="margin:0 0 12px; font-size:18px; font-weight:600;">Block ' + window.esc(name) + '?</h2>' +
+      '<p style="margin:0 0 16px; font-size:14px; line-height:1.5; color:#d6d3d1;">' +
+      'You won’t see them in NextUp anymore. They won’t see you either. ' +
+      'Past completed jobs stay in your history. You can unblock anytime from ' +
+      'Profile → Blocked Users.' +
+      '</p>' +
+      '<label style="display:flex; align-items:flex-start; gap:8px; padding:10px 0; cursor:pointer;">' +
+      '<input type="checkbox" id="nx-block-report" style="margin-top:3px; flex-shrink:0; width:18px; height:18px;">' +
+      '<span style="font-size:13px; line-height:1.5; color:#d6d3d1;">' +
+      'Also report to NextUp safety team<br>' +
+      '<span style="color:#a8a29e; font-size:12px;">(for harassment, fraud, threats — may lead to platform-wide ban)</span>' +
+      '</span></label>' +
+      '<label style="display:block; font-size:13px; color:#a8a29e; padding:8px 0 6px;">Reason (optional)</label>' +
+      '<textarea id="nx-block-reason" rows="3" placeholder="Helps us improve safety" ' +
+      'maxlength="500" style="width:100%; box-sizing:border-box; resize:vertical; ' +
+      'min-height:60px; max-height:140px; padding:10px 12px; border-radius:10px; ' +
+      'border:1px solid #2a2a2a; background:#0b0b0b; color:#fafaf9; font-size:14px; ' +
+      'font-family:inherit;"></textarea>' +
+      '<div style="display:flex; gap:10px; margin-top:18px;">' +
+      '<button id="nx-block-cancel" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:1px solid #2a2a2a; background:transparent; color:#fafaf9; ' +
+      'font-size:15px; cursor:pointer;">Cancel</button>' +
+      '<button id="nx-block-confirm" style="flex:1; padding:12px; border-radius:10px; ' +
+      'border:0; background:#ef4444; color:#fff; font-weight:600; font-size:15px; ' +
+      'cursor:pointer;">Block</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+
+    const cleanup = (result) => { overlay.remove(); resolve(result); };
+    overlay.querySelector("#nx-block-cancel").addEventListener("click", () => cleanup(false));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(false); });
+
+    overlay.querySelector("#nx-block-confirm").addEventListener("click", async () => {
+      const reason = (overlay.querySelector("#nx-block-reason").value || "").trim();
+      const alsoReport = !!overlay.querySelector("#nx-block-report").checked;
+      // Disable button to prevent double-submit
+      const btn = overlay.querySelector("#nx-block-confirm");
+      btn.disabled = true;
+      btn.textContent = "Blocking…";
+      try {
+        await window.apiFetch("/api/blocks/" + encodeURIComponent(userId), {
+          method: "POST",
+          body: { reason: reason || null, also_report: alsoReport },
+        });
+        cleanup(true);
+        if (typeof opts.onSuccess === "function") {
+          try { opts.onSuccess(); } catch (_) {}
+        }
+        if (window.toast) window.toast("Blocked " + name, "success");
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Block";
+        if (window.nxAlert) {
+          window.nxAlert("Couldn’t block: " + (err.message || err));
+        }
+      }
+    });
+  });
+};

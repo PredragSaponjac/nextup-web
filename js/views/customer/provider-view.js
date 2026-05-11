@@ -128,6 +128,16 @@
           </button>
         ` : ""}
 
+        <!-- v1.3.25: Block provider button. Subtle styling \u2014 we don't
+             want to encourage casual blocking, but Apple Guideline 1.2
+             requires it to be reachable from any user-to-user surface. -->
+        <button id="pv-block-btn" type="button" data-provider-name="${window.esc(name)}"
+          style="background:transparent; border:0; color:var(--nx-text-muted); font-size:13px;
+            padding:8px 0; margin:0 auto 18px; display:block; cursor:pointer;
+            text-decoration:underline;">
+          Block this provider
+        </button>
+
         <div style="font-family:var(--nx-font-sans); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--nx-text-muted); padding:8px 0 12px;">
           Reviews
         </div>
@@ -151,6 +161,25 @@
       if (googleBtn && p.google_business_url) {
         googleBtn.addEventListener("click", () => {
           window.nxOpenExternal(p.google_business_url);
+        });
+      }
+
+      // v1.3.25 — Block this provider. Opens the block flow modal;
+      // on success, navigate back to the home/responses screen so
+      // the now-blocked provider disappears from view immediately
+      // (their broadcasts and search results are filtered server-side
+      // on the next fetch).
+      const blockBtn = document.getElementById("pv-block-btn");
+      if (blockBtn) {
+        blockBtn.addEventListener("click", async () => {
+          const blockName = blockBtn.getAttribute("data-provider-name") || "this provider";
+          const ok = await window.nxBlockUserFlow({
+            userId: providerId,
+            name: blockName,
+          });
+          if (ok) {
+            window.navigate("home");
+          }
         });
       }
     },

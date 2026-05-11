@@ -15,13 +15,18 @@ window.Views.MessageThread = {
     if (!requestId) { window.navigate("messages"); return; }
     this._requestId = requestId;
 
-    // Initial shell render
+    // Initial shell render. v1.3.25 adds a kebab menu (\u22ee) in the
+    // top-right of the appbar that opens a small action sheet with
+    // "Block & Report" \u2014 required for Apple Guideline 1.2 compliance
+    // and the natural place to block someone after a bad conversation.
     window.mount(`
       <div class="nx-screen nx-screen--thread">
         <header class="nx-appbar nx-appbar--with-back">
           <button class="nx-appbar__back" id="back-btn" aria-label="Back">\u2039</button>
           <span class="nx-appbar__title" id="t-title">Loading\u2026</span>
-          <div></div>
+          <button id="t-kebab" aria-label="More options"
+            style="background:transparent; border:0; color:var(--nx-text); font-size:22px;
+              padding:6px 10px; cursor:pointer; line-height:1;">\u22ee</button>
         </header>
         <div class="nx-thread__body" id="t-body">
           <div class="nx-empty"><div class="nx-empty__title">Loading\u2026</div></div>
@@ -45,6 +50,8 @@ window.Views.MessageThread = {
       this._send();
     });
 
+    document.getElementById("t-kebab").addEventListener("click", () => this._showKebab());
+
     NX_THREAD_SEEN_IDS = new Set();
     await this._fetchAndRender();
     clearInterval(NX_THREAD_POLL);
@@ -54,11 +61,18 @@ window.Views.MessageThread = {
 
   async _fetchAndRender(silent) {
     try {
-      const [msgs, req] = await Promise.all([
+      // v1.3.25 — fetch block-state alongside messages so we can lock
+      // the composer if either side has blocked the other. block-state
+      // endpoint is a NEW v1.3.25 route; clients on older builds simply
+      // don't call it (they'll lock-via-403 on send instead).
+      const [msgs, req, blockState] = await Promise.all([
         window.apiFetch(`/api/messages/${this._requestId}`),
         window.apiFetch(`/api/requests/${this._requestId}`).catch(() => null),
+        window.apiFetch(`/api/messages/${this._requestId}/block-state`).catch(() => ({ block_state: "none" })),
       ]);
+      this._blockState = blockState || { block_state: "none" };
       this._renderMessages(msgs, req);
+      this._applyBlockLock();
     } catch (e) {
       if (!silent) {
         document.getElementById("t-body").innerHTML = `
@@ -67,6 +81,119 @@ window.Views.MessageThread = {
             <div>${window.esc(e.message || "")}</div>
           </div>`;
       }
+    }
+  },
+
+  _applyBlockLock() {
+    const state = (this._blockState && this._blockState.block_state) || "none";
+    const input = document.getElementById("t-input");
+    const sendBtn = document.getElementById("t-send");
+    const form = document.getElementById("t-form");
+    if (!input || !sendBtn || !form) return;
+    if (state === "none") {
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.placeholder = "Message…";
+      const banner = document.getElementById("t-block-banner");
+      if (banner) banner.remove();
+      return;
+    }
+    // Locked composer. We deliberately use the same lock UX regardless
+    // of who blocked whom (silent block — the blocked party isn't told
+    // explicitly). Only the "i_blocked" branch tells the user how to
+    // unlock (since they hold the key).
+    input.disabled = true;
+    sendBtn.disabled = true;
+    input.placeholder = "Messaging unavailable";
+    input.value = "";
+    let bannerHTML = "";
+    if (state === "i_blocked" || state === "both") {
+      bannerHTML = `You blocked this user. <a href="#blocked-users" style="color:#22c55e; text-decoration:underline;">Unblock</a> from Profile → Blocked Users to resume.`;
+    } else {
+      bannerHTML = `Cannot send messages to this user.`;
+    }
+    let banner = document.getElementById("t-block-banner");
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "t-block-banner";
+      banner.style.cssText =
+        "padding:10px 14px; background:#2a1a1a; border-top:1px solid #ef4444; " +
+        "color:#fca5a5; font-size:13px; text-align:center; line-height:1.5;";
+      form.parentNode.insertBefore(banner, form);
+    }
+    banner.innerHTML = bannerHTML;
+  },
+
+  _showKebab() {
+    const otherId = this._blockState && this._blockState.other_user_id;
+    const state = (this._blockState && this._blockState.block_state) || "none";
+    if (!otherId) {
+      if (window.nxAlert) window.nxAlert("No other party in this thread yet.");
+      return;
+    }
+    // If already blocked by me, show "Unblock" instead of "Block".
+    const iBlocked = state === "i_blocked" || state === "both";
+    const opts = iBlocked
+      ? ["Unblock user", "Cancel"]
+      : ["Block & Report user", "Cancel"];
+    // Use nxSheet if available (action-sheet style), otherwise fall
+    // back to nxConfirm semantics with the primary action.
+    const handler = (idx) => {
+      if (iBlocked && idx === 0) {
+        this._unblockOther(otherId);
+      } else if (!iBlocked && idx === 0) {
+        this._blockOther(otherId);
+      }
+    };
+    if (window.nxSheet) {
+      window.nxSheet({
+        title: iBlocked ? "Thread options" : "Block this user?",
+        options: opts.map((label, i) => ({ label, value: i })),
+        onSelect: handler,
+      });
+    } else {
+      // Fallback: simple confirm with the primary action.
+      window.nxConfirm(
+        iBlocked
+          ? "Unblock this user? They will see you again and you'll see them."
+          : "Block this user? You won't see their messages or broadcasts anymore.",
+        { okLabel: iBlocked ? "Unblock" : "Block", danger: !iBlocked }
+      ).then(ok => { if (ok) handler(0); });
+    }
+  },
+
+  async _blockOther(otherId) {
+    const ok = await window.nxBlockUserFlow({
+      userId: otherId,
+      name: "this user",
+    });
+    if (ok) {
+      // Refresh block state and lock the composer immediately.
+      try {
+        this._blockState = await window.apiFetch(
+          `/api/messages/${this._requestId}/block-state`
+        );
+        this._applyBlockLock();
+      } catch (_) {
+        this._blockState = { block_state: "i_blocked", other_user_id: otherId };
+        this._applyBlockLock();
+      }
+    }
+  },
+
+  async _unblockOther(otherId) {
+    const ok = await window.nxConfirm(
+      "Unblock this user? You'll see them in NextUp again and they'll see you.",
+      { okLabel: "Unblock", cancelLabel: "Cancel" }
+    );
+    if (!ok) return;
+    try {
+      await window.apiFetch("/api/blocks/" + encodeURIComponent(otherId), { method: "DELETE" });
+      if (window.toast) window.toast("Unblocked", "success");
+      this._blockState = { block_state: "none", other_user_id: otherId };
+      this._applyBlockLock();
+    } catch (e) {
+      window.nxAlert("Couldn't unblock: " + (e.message || e));
     }
   },
 
