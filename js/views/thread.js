@@ -124,7 +124,7 @@ window.Views.MessageThread = {
     banner.innerHTML = bannerHTML;
   },
 
-  _showKebab() {
+  async _showKebab() {
     const otherId = this._blockState && this._blockState.other_user_id;
     const state = (this._blockState && this._blockState.block_state) || "none";
     if (!otherId) {
@@ -133,33 +133,34 @@ window.Views.MessageThread = {
     }
     // If already blocked by me, show "Unblock" instead of "Block".
     const iBlocked = state === "i_blocked" || state === "both";
-    const opts = iBlocked
-      ? ["Unblock user", "Cancel"]
-      : ["Block & Report user", "Cancel"];
-    // Use nxSheet if available (action-sheet style), otherwise fall
-    // back to nxConfirm semantics with the primary action.
-    const handler = (idx) => {
-      if (iBlocked && idx === 0) {
-        this._unblockOther(otherId);
-      } else if (!iBlocked && idx === 0) {
-        this._blockOther(otherId);
-      }
-    };
+
+    // nxSheet returns a Promise that resolves with the chosen option's
+    // `value` (or null if cancelled). It does NOT use an onSelect
+    // callback — that was the bug in v1.3.25 first cut where the
+    // action sheet showed but tapping anything silently did nothing.
     if (window.nxSheet) {
-      window.nxSheet({
+      const choice = await window.nxSheet({
         title: iBlocked ? "Thread options" : "Block this user?",
-        options: opts.map((label, i) => ({ label, value: i })),
-        onSelect: handler,
+        options: iBlocked
+          ? [{ label: "Unblock user", value: "unblock" }]
+          : [{ label: "Block & Report user", value: "block" }],
+        cancelLabel: "Cancel",
       });
-    } else {
-      // Fallback: simple confirm with the primary action.
-      window.nxConfirm(
-        iBlocked
-          ? "Unblock this user? They will see you again and you'll see them."
-          : "Block this user? You won't see their messages or broadcasts anymore.",
-        { okLabel: iBlocked ? "Unblock" : "Block", danger: !iBlocked }
-      ).then(ok => { if (ok) handler(0); });
+      if (choice === "block") this._blockOther(otherId);
+      else if (choice === "unblock") this._unblockOther(otherId);
+      return;
     }
+
+    // Fallback: simple confirm with the primary action.
+    const ok = await window.nxConfirm(
+      iBlocked
+        ? "Unblock this user? They will see you again and you'll see them."
+        : "Block this user? You won't see their messages or broadcasts anymore.",
+      { okLabel: iBlocked ? "Unblock" : "Block", danger: !iBlocked }
+    );
+    if (!ok) return;
+    if (iBlocked) this._unblockOther(otherId);
+    else this._blockOther(otherId);
   },
 
   async _blockOther(otherId) {
