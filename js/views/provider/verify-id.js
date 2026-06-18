@@ -3,12 +3,11 @@
    Route: #verify-id
 
    Two flows, picked at runtime by /api/verify-id/start:
-     1. AUTOMATED (Persona configured server-side): user pays $5
-        via Stripe Checkout → redirected to Persona's hosted ID +
-        selfie + liveness flow → webhook updates status. Most
-        verifications complete in 30-60 seconds with no human in
-        the loop.
-     2. MANUAL (Persona env vars not set, fallback): two-step
+     1. AUTOMATED (Stripe Identity, or legacy Persona): opens a
+        hosted ID + selfie flow → webhook updates status. Stripe
+        Identity is free to the provider; most verifications
+        complete in about a minute with no human in the loop.
+     2. MANUAL (no automated vendor configured, fallback): two-step
         camera capture (ID front + selfie) uploaded as multipart
         to /api/providers/verify-id (provider) or
         /api/auth/verify-id (customer). Admin reviews via email
@@ -18,6 +17,8 @@
 window.Views.ProviderVerifyId = {
   // Automated-mode state
   _mode: null,            // "automated" | "manual" | null (loading)
+  _provider: null,        // "stripe_identity" | "persona"
+  _verifyUrl: null,       // Stripe Identity hosted URL (free path)
   _checkoutUrl: null,
   _resumeUrl: null,
   _feeUsd: 5,
@@ -32,6 +33,8 @@ window.Views.ProviderVerifyId = {
     this._selfieDataUrl = null;
     this._step = 1;
     this._mode = null;
+    this._provider = null;
+    this._verifyUrl = null;
     this._checkoutUrl = null;
     this._resumeUrl = null;
 
@@ -64,9 +67,11 @@ window.Views.ProviderVerifyId = {
 
     if (resp && resp.mode === "automated") {
       this._mode = "automated";
+      this._provider = resp.provider || "persona";
+      this._verifyUrl = resp.verify_url || null;
       this._checkoutUrl = resp.checkout_url || null;
       this._resumeUrl = resp.resume_url || null;
-      this._feeUsd = resp.fee_usd || 5;
+      this._feeUsd = (resp.fee_usd != null) ? resp.fee_usd : 5;
       this._mountAutomated();
       return;
     }
@@ -77,8 +82,10 @@ window.Views.ProviderVerifyId = {
   },
 
   _mountAutomated() {
-    const isResume = !!this._resumeUrl;
-    const url = this._checkoutUrl || this._resumeUrl;
+    const url = this._verifyUrl || this._checkoutUrl || this._resumeUrl;
+    const isResume = !!this._resumeUrl && !this._verifyUrl;
+    const isFree = this._feeUsd === 0;
+    const vendor = this._provider === "stripe_identity" ? "Stripe Identity" : "Persona";
     const fee = this._feeUsd;
     window.mount(`
       <div class="nx-screen">
@@ -97,9 +104,9 @@ window.Views.ProviderVerifyId = {
 
           ${isResume ? `` : `
             <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:18px; margin-bottom:14px;">
-              <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text); font-weight:600; margin-bottom:6px;">$${fee.toFixed(2)} one-time fee</div>
+              <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text); font-weight:600; margin-bottom:6px;">${isFree ? "Optional — and free" : `$${fee.toFixed(2)} one-time fee`}</div>
               <div style="font-family:var(--nx-font-sans); font-size:13px; color:var(--nx-text-muted); line-height:1.6;">
-                Verification is run by Persona — a global identity vendor used by Robinhood, Coinbase, and others. Takes about 60 seconds: you'll photograph a government ID and take a selfie with a quick liveness check. Result is automatic.
+                Getting verified is optional — but verified providers earn an <strong style="color:var(--nx-text);">ID Verified ✓</strong> badge that helps customers pick you with confidence. Verification is run by ${vendor}. Takes about a minute: you'll photograph a government ID and take a quick selfie. The result is automatic.
               </div>
             </div>
           `}
@@ -120,7 +127,7 @@ window.Views.ProviderVerifyId = {
           </div>
 
           <button class="nx-cta" id="vid-go" type="button" style="background:#22c55e; color:#000; font-weight:600;">
-            ${isResume ? "Continue verification ›" : `Pay $${fee.toFixed(2)} & verify ›`}
+            ${isResume ? "Continue verification ›" : (isFree ? "Verify now — it's free ›" : `Pay $${fee.toFixed(2)} & verify ›`)}
           </button>
 
           <div style="font-size:11px; color:var(--nx-text-muted); margin-top:12px; text-align:center;">
@@ -166,7 +173,7 @@ window.Views.ProviderVerifyId = {
       } catch (e) {
         const err = document.getElementById("vid-err");
         if (err) { err.textContent = "Couldn't open verification: " + (e.message || e); err.style.display = "block"; }
-        btn.disabled = false; btn.textContent = isResume ? "Continue verification ›" : `Pay $${fee.toFixed(2)} & verify ›`;
+        btn.disabled = false; btn.textContent = isResume ? "Continue verification ›" : (isFree ? "Verify now — it's free ›" : `Pay $${fee.toFixed(2)} & verify ›`);
       }
     });
   },
