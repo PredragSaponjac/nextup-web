@@ -9,12 +9,12 @@ window.Views.RoleSelect = {
     window.mount(`
       <div class="nx-welcome">
         <div class="nx-welcome__grid" aria-hidden="true">
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-beauty.png');"></div>
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-cleaning.png');"></div>
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-dogs.png');"></div>
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-fitness.png');"></div>
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-repair.png');"></div>
-          <div class="nx-welcome__tile" style="background-image:url('assets/grid-spa.png');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-beauty.jpg');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-cleaning.jpg');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-dogs.jpg');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-fitness.jpg');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-repair.jpg');"></div>
+          <div class="nx-welcome__tile" style="background-image:url('assets/grid-spa.jpg');"></div>
         </div>
         <div class="nx-welcome__overlay" aria-hidden="true"></div>
 
